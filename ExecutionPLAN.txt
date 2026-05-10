@@ -1,0 +1,463 @@
+Queue Management App - 7 Day Execution Plan
+
+Purpose
+This document is a practical 7-day execution plan for building the Queue Management App as a learning journey.
+
+The goal is to spend about 1 focused hour each day, build one useful feature, make one clean commit, and write tutorial notes that can be shared with others.
+
+This journey will follow an API-first and TDD approach. Before building each backend feature, define or update the OpenAPI contract, then write tests for the expected API behavior, then implement the smallest code needed to make the tests pass.
+
+This is not meant to be a perfect production system in 7 hours. The goal is to create a working MVP path, learn the core concepts, and explain the journey in a simple way.
+
+
+How to Use This Plan
+1. Work on only one day at a time.
+2. Start each session by reading the day's goal and acceptance criteria.
+3. Update the OpenAPI spec for the feature before writing implementation code.
+4. Write the API tests first for the main success and failure cases.
+5. Build the smallest working version of that feature.
+6. Write short tutorial notes while the learning is fresh.
+7. Make one commit at the end of the day.
+8. Avoid adding future-scope features unless they are required for the current day.
+
+Recommended daily time split:
+- 10 minutes: review goal and plan the task.
+- 10 minutes: update OpenAPI spec and write/adjust tests.
+- 25 minutes: build the feature.
+- 10 minutes: test the flow manually.
+- 5 minutes: write tutorial notes and commit.
+
+
+API-First and TDD Rules
+- Treat the OpenAPI spec as the API contract for the project.
+- Add or update endpoint paths, request bodies, response bodies, and status codes before implementation.
+- Write tests for expected API behavior before or alongside implementation.
+- Keep tests focused on business behavior, not internal implementation details.
+- For each endpoint, test at least one success case and the most important failure case.
+- Do not add endpoints directly in controllers without reflecting them in the OpenAPI spec.
+- If the implementation and OpenAPI spec disagree, fix the mismatch before moving to the next feature.
+- Keep the OpenAPI contract simple for MVP. Do not model future features until they are being built.
+
+
+Day 1: Project Setup and Basic Architecture
+
+Feature goal:
+Set up the Angular frontend and ASP.NET Core Web API backend so the project has a working foundation.
+
+What to build:
+- Create the Angular frontend project.
+- Create the ASP.NET Core Web API project.
+- Add a simple backend folder structure for Controllers, Services, DTOs, Entities, and Data.
+- Configure SQLite as the initial database choice.
+- Create the initial OpenAPI spec file.
+- Add a simple health/check endpoint.
+- Add a first API test for the health/check endpoint.
+- Confirm the frontend and backend both run locally.
+
+What to learn:
+- How frontend and backend projects fit together.
+- How Angular calls an API.
+- Why the backend should own business rules.
+- How to keep the first architecture simple without overengineering.
+- How API-first development uses OpenAPI as the contract before coding.
+- How TDD starts with a small test before implementation.
+
+Tutorial text:
+Today I started the Queue Management App by setting up the basic project structure. The goal was not to build features yet, but to create a clean foundation where the frontend and backend can grow step by step.
+
+I created the Angular frontend for the user interface and the ASP.NET Core Web API for backend logic. I also added a simple health endpoint so I could confirm the backend is running correctly before adding real features.
+
+I also started the project with an API-first mindset by creating the first OpenAPI contract. Before adding more API behavior, I will update this contract so the frontend and backend have a shared agreement.
+
+To keep the journey TDD-friendly, I added the first API test around the health endpoint. This is a small test, but it establishes the habit: define the contract, write the test, then implement the feature.
+
+The most important lesson from today is that a good MVP starts with a simple structure. I do not need a complicated enterprise architecture yet. I only need enough organization to keep controllers, services, DTOs, entities, and database code understandable.
+
+By the end of the day, the frontend and backend can both run locally. This gives me a stable base for the rest of the 7-day journey.
+
+Acceptance criteria:
+- Angular frontend runs locally.
+- ASP.NET Core backend runs locally.
+- A simple backend health/check endpoint returns a successful response.
+- Initial OpenAPI spec exists and documents the health/check endpoint.
+- At least one API test verifies the health/check endpoint.
+- Project folders are clear and beginner-friendly.
+
+Suggested commit message:
+Day 1: Set up Angular and ASP.NET Core projects
+
+
+Day 2: Owner Registration and Queue Location Creation
+
+Feature goal:
+Allow an owner to register and create the first queue location during registration.
+
+What to build:
+- Update OpenAPI spec for owner registration.
+- Write API tests for successful registration and validation failure.
+- Add User entity.
+- Add QueueLocation entity.
+- Add UserLocation entity for owner/manager role mapping.
+- Create owner registration DTO.
+- Create owner registration API.
+- Generate a public LocationCode.
+- Add a simple Angular registration screen.
+- Save owner, queue location, and owner-location role together.
+
+What to learn:
+- How to design an API contract before implementing it.
+- How tests describe expected API behavior.
+- How related database records are created in one flow.
+- Why DTOs are useful for API requests.
+- How a business account can own a queue location.
+- Why LocationCode is public but not secret.
+
+Tutorial text:
+Today I built the owner registration flow. This is the first real business feature because it lets a business owner create an account and set up a queue location in one step.
+
+Before writing the implementation, I updated the OpenAPI spec for the registration endpoint. This helped me decide the request body, response body, and validation errors clearly before coding.
+
+I also wrote tests for the registration API. One test covers the happy path where an owner and queue location are created successfully. Another test covers validation, because the API should reject incomplete registration data.
+
+The registration flow creates three important records: the owner user, the queue location, and the relationship between them. This relationship is useful because later the app can support managers and possibly multiple locations without redesigning everything.
+
+I also generated a LocationCode for the queue location. This code will be used in public customer URLs, such as the QR join page. It is important to understand that this code is not a password or secret. It is just a friendly public identifier.
+
+I learned how a simple registration screen connects to a backend API and how the backend can create multiple records as one complete business action.
+
+Acceptance criteria:
+- Owner can submit registration details.
+- OpenAPI spec documents the registration endpoint.
+- API tests cover successful registration and at least one validation failure.
+- Backend creates a User record.
+- Backend creates a QueueLocation record.
+- Backend creates a UserLocation owner role record.
+- Backend generates and stores LocationCode.
+- Registration returns a successful response.
+
+Suggested commit message:
+Day 2: Add owner registration and queue location setup
+
+
+Day 3: Login and Basic Authentication
+
+Feature goal:
+Allow owners and managers to log in with email or mobile number and protect private backend APIs.
+
+What to build:
+- Update OpenAPI spec for login.
+- Write API tests for valid login and invalid credentials.
+- Add login request DTO.
+- Support login using email or mobile identifier.
+- Hash passwords instead of storing plain text.
+- Add JWT authentication.
+- Add Angular login screen.
+- Store the login token on the frontend.
+- Protect manager/owner APIs with authentication.
+
+What to learn:
+- How authentication endpoints are represented in OpenAPI.
+- How tests can protect login behavior.
+- Why passwords must be hashed.
+- How JWT authentication works at a basic level.
+- Difference between public APIs and protected APIs.
+- How the frontend sends a token when calling protected APIs.
+
+Tutorial text:
+Today I added login and basic authentication. This is an important step because the app has both public customer pages and private manager pages.
+
+I started by updating the OpenAPI contract for the login endpoint. This made the expected request and response clear before writing controller code.
+
+Then I wrote tests for login behavior. The tests verify that valid credentials return a token and invalid credentials are rejected.
+
+The login API accepts one identifier field, which can be either an email address or a mobile number. This keeps the login screen simple for users. Passwords are checked securely using hashing, so the database never needs to store plain text passwords.
+
+After successful login, the backend returns a JWT token. The frontend stores this token and sends it with protected API requests. This allows the backend to know who is making the request and whether they are allowed to access manager features.
+
+I learned that authentication is not just about logging in. It is also about clearly separating public actions, like customer joining a queue, from private actions, like opening the queue or calling the next customer.
+
+Acceptance criteria:
+- Owner/manager can log in with valid email or mobile and password.
+- OpenAPI spec documents the login endpoint.
+- API tests cover valid login and invalid credentials.
+- Invalid credentials are rejected.
+- Passwords are not stored as plain text.
+- Protected APIs reject requests without a valid token.
+- Angular login screen can store and use the token.
+
+Suggested commit message:
+Day 3: Add login and JWT authentication
+
+
+Day 4: Customer Join Queue
+
+Feature goal:
+Allow customers to join an open queue using a public location code and receive a private status link.
+
+What to build:
+- Update OpenAPI spec for customer join and customer status link response.
+- Write API tests for successful join and closed queue rejection.
+- Add public customer join API using LocationCode.
+- Validate customer name.
+- Accept optional mobile number, party size, and service reason.
+- Generate daily token number for the queue location.
+- Generate private TrackingToken.
+- Create QueueEntry record.
+- Add Angular customer join screen.
+- Redirect customer to private status URL after joining.
+
+What to learn:
+- How public APIs are described in OpenAPI.
+- How API tests protect public customer flows.
+- How public customer APIs differ from protected manager APIs.
+- How daily token numbers work.
+- Why private tracking links need a token.
+- How customer input should be validated.
+
+Tutorial text:
+Today I built the customer join flow. This is the feature that replaces the paper notebook experience for customers.
+
+I updated the OpenAPI spec first so the public join endpoint had a clear contract. This included the location code path parameter, customer request fields, success response, and common validation errors.
+
+I also wrote tests before completing the implementation. The most important tests are that a customer can join an open queue and cannot join a closed queue.
+
+The customer opens a public join page using the queue location code. They enter their name and optional details like mobile number, party size, or service reason. When they join, the backend creates a queue entry and gives them a token number.
+
+The backend also creates a private tracking token. This is important because customers should not be able to guess another customer's queue status page just by changing an ID in the URL.
+
+I learned how to build a public API that still protects private customer information. The customer join page is public, but each customer's live status page is protected by a private tracking token.
+
+Acceptance criteria:
+- Customer can open join page by location code.
+- OpenAPI spec documents the customer join endpoint.
+- API tests cover successful join and closed queue rejection.
+- Customer name is required.
+- Party size is optional but must be valid when provided.
+- Customer can join only when queue is open.
+- Queue entry gets a token number.
+- Queue entry gets a private tracking token.
+- Customer is redirected to private status URL.
+
+Suggested commit message:
+Day 4: Add customer queue join flow
+
+
+Day 5: Manager Dashboard and Queue Operations
+
+Feature goal:
+Build the main manager dashboard so staff can open the queue, call customers, and update queue status.
+
+What to build:
+- Update OpenAPI spec for manager queue operations.
+- Write API tests for call-next success and call-next conflict.
+- Add open queue API.
+- Add close queue API.
+- Add today queue API.
+- Add manual walk-in API.
+- Add call next API.
+- Add served, no-response, skipped, restore, and cancel APIs.
+- Build a simple Angular manager dashboard.
+- Show current called customer, waiting list, skipped list, and recent served activity.
+
+What to learn:
+- How OpenAPI documents protected endpoints and error status codes.
+- How TDD protects important queue transitions.
+- How queue state transitions work.
+- Why backend rules matter more than disabled frontend buttons.
+- How to avoid two managers calling two customers at the same time.
+- How to return clear errors such as 409 Conflict.
+
+Tutorial text:
+Today I built the manager dashboard and the main queue operations. This is the heart of the app because it is where staff actually manage the queue during the day.
+
+I updated the OpenAPI contract for the manager queue operations before implementing them. This made the protected endpoints, request shapes, response shapes, and conflict status codes explicit.
+
+I also used tests to lock down the most important queue rules. The call-next behavior needs tests because it controls the main queue state and must handle conflicts safely.
+
+The manager can open the queue, manually add walk-in customers, call the next waiting customer, and update the called customer as served, no response, skipped, or cancelled.
+
+The most important rule is that only one customer should be in Called status for the same queue location and business date. Even if the frontend disables the Call Next button, the backend must still enforce this rule. This protects the app when multiple managers are using the dashboard at the same time.
+
+I learned that business rules should live in the backend. The UI can guide users, but the API must protect the real queue state.
+
+Acceptance criteria:
+- Manager can open and close the queue.
+- OpenAPI spec documents manager queue operation endpoints.
+- API tests cover call-next success and call-next conflict.
+- Manager can view today's queue.
+- Manager can add a walk-in customer.
+- Manager can call the next waiting customer.
+- Backend prevents calling next if another customer is already called.
+- Manager can mark a called customer as served.
+- Manager can mark no response, skipped, restored, or cancelled.
+- Dashboard clearly shows current queue state.
+
+Suggested commit message:
+Day 5: Add manager dashboard queue operations
+
+
+Day 6: Customer Status, Display Screen, and Auto Refresh
+
+Feature goal:
+Add live customer status and display screen updates using simple polling instead of SignalR.
+
+What to build:
+- Update OpenAPI spec for customer status and display endpoints.
+- Write API tests for valid private status link and invalid tracking token.
+- Add customer status API using QueueEntryId and TrackingToken.
+- Add display API for current called token and last served token.
+- Build customer status page.
+- Build display screen.
+- Add auto-refresh polling.
+- Add "Last updated X seconds ago" indicator.
+- Add simple refresh failure message.
+
+What to learn:
+- How read-only status endpoints are represented in OpenAPI.
+- How tests protect private tracking link behavior.
+- How polling works.
+- Why polling is enough for the MVP.
+- How to update a UI timer locally every second without calling the API every second.
+- How to show live queue information in a simple way.
+
+Tutorial text:
+Today I added live updates for customers and the display screen. Instead of using SignalR or a real-time system, I used simple polling because it is easier to understand and good enough for the MVP.
+
+I updated the OpenAPI spec for the customer status and display endpoints before building the screens. This made the frontend work easier because the API response shape was already defined.
+
+I also wrote tests for the private status link. A valid tracking token should return the customer's status, but an invalid tracking token should not expose queue information.
+
+The customer status page refreshes every few seconds to show the latest token status and queue position. The display screen refreshes more frequently because it is meant to be visible to staff or customers in the business location.
+
+I also added a small "Last updated X seconds ago" indicator. This label updates every second on the frontend, but the app does not call the API every second. The API is called only at the polling interval, and the label is calculated locally from the last successful refresh time.
+
+I learned that real-time features do not always require complex technology at the beginning. A simple polling approach can make an MVP feel live while keeping the architecture easy to explain.
+
+Acceptance criteria:
+- Customer status page loads using private tracking URL.
+- OpenAPI spec documents customer status and display endpoints.
+- API tests cover valid and invalid tracking token behavior.
+- Customer status page shows token number, status, and queue position when waiting.
+- Display screen shows current called token and last served token.
+- Customer status page auto-refreshes every 5-10 seconds.
+- Display screen auto-refreshes every 2-3 seconds.
+- Last updated indicator changes every second without calling API every second.
+- Refresh failure shows a simple retry message.
+
+Suggested commit message:
+Day 6: Add customer status display and polling
+
+
+Day 7: Polish, Testing, and Final Demo
+
+Feature goal:
+Clean up the MVP, test the main journey, and prepare a shareable final demo.
+
+What to build:
+- Review OpenAPI spec against implemented APIs.
+- Add or fix API tests for important gaps.
+- Improve mobile layout.
+- Add simple empty states.
+- Add clear validation and error messages.
+- Add basic backend tests for important queue rules.
+- Test the complete flow manually.
+- Prepare screenshots or a short demo video.
+- Write final learning summary.
+
+What to learn:
+- How to verify that API documentation and implementation still match.
+- How a TDD approach improves confidence during cleanup.
+- How to test business rules.
+- How to manually verify an end-to-end user flow.
+- Why small UI polish matters for non-technical staff.
+- How to turn a build process into a useful tutorial series.
+
+Tutorial text:
+Today I polished the MVP and tested the full queue journey from start to finish. The goal was to make sure the app works as a complete story, not just as separate features.
+
+I reviewed the OpenAPI spec against the implemented backend APIs. This helped confirm that the API contract still matches the real application behavior.
+
+I also reviewed the test coverage for the most important queue rules and added tests where needed. This gave more confidence before showing the final demo.
+
+I checked the flow where an owner registers, logs in, opens the queue, a customer joins, the manager calls the customer, the customer status updates, the display screen updates, and the customer is marked as served.
+
+I also added basic tests for important backend rules, especially queue transitions. Testing these rules matters because queue state is the most important part of the app.
+
+I learned that finishing an MVP is not only about adding features. It is also about making the flow understandable, fixing rough edges, and being able to explain what was built clearly.
+
+Acceptance criteria:
+- Full owner-to-customer-to-manager demo flow works.
+- OpenAPI spec matches the implemented MVP APIs.
+- Important API tests pass.
+- Mobile screens are usable.
+- Empty states are understandable.
+- Important errors are shown clearly.
+- Basic backend tests cover key queue rules.
+- Final tutorial/demo notes are ready.
+
+Suggested commit message:
+Day 7: Polish MVP flow and add basic tests
+
+
+Daily Tutorial Template
+
+Title:
+Day X: [Feature Name] in the Queue Management App
+
+Goal:
+Today I am building [feature]. This feature matters because [reason].
+
+Why this feature matters:
+In a real business, this helps [owner/manager/customer] do [specific action] without using paper or manual tracking.
+
+Backend changes:
+- Updated OpenAPI spec for [endpoint or feature].
+- Wrote API tests for [success case] and [failure case].
+- Added/updated [API or service].
+- Added/updated [entity or DTO].
+- Added validation for [important rule].
+- Kept business rules in the backend.
+
+Frontend changes:
+- Added/updated [screen].
+- Connected the screen to [API].
+- Added basic loading, success, and error handling.
+
+What I learned:
+- I learned [lesson 1].
+- I learned [lesson 2].
+- I learned [lesson 3].
+
+Common issue or debugging note:
+One issue I faced was [issue]. I fixed it by [solution].
+
+Demo notes:
+In the demo, I show [main user action], then [result].
+
+Commit message:
+Day X: [Short commit description]
+
+
+Out of Scope for 7-Day MVP
+
+Do not build these during the 7-day MVP:
+- SignalR real-time updates.
+- PostgreSQL migration.
+- WhatsApp notifications.
+- Payment systems.
+- Loyalty programs.
+- Multi-branch management.
+- Resource, counter, or room assignment.
+- Multi-language support.
+- AI prediction or wait-time estimation.
+- Advanced analytics.
+- Separate display-only role.
+
+These can be added later after the core queue flow is working and easy to explain.
+
+
+Final Reminder
+
+The purpose of this journey is to learn by building. Keep each day small, useful, and shareable.
+
+If a feature feels too large for 1 hour, build the smallest version that proves the idea. A simple working feature is better than an unfinished perfect design.
