@@ -1,0 +1,12 @@
+bin/
+obj/
+node_modules/
+dist/
+.angular/
+.vs/
+.vscode/
+*.user
+*.db
+*.db-shm
+*.db-wal
+TestResults/

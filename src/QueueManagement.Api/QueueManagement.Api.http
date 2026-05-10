@@ -1,0 +1,6 @@
+@QueueManagement.Api_HostAddress = http://localhost:5020
+
+GET {{QueueManagement.Api_HostAddress}}/api/health
+Accept: application/json
+
+###
