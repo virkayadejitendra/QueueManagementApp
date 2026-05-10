@@ -1,11 +1,12 @@
-# Restaurant Queue Management App
+# Queue Management App
 
 ## Project Goal
-Build a simple free restaurant waitlist system to replace paper notebook queue management.
+Build a simple free queue management system to replace paper notebook or manual token tracking.
 
 Main success criteria:
-- Can one restaurant stop using paper for customer queue management?
-- Can non-technical restaurant staff run the queue from a mobile-friendly dashboard?
+- Can one business/location stop using paper for customer queue management?
+- Can non-technical staff run the queue from a mobile-friendly dashboard?
+- Can the same product work for restaurants, clinics, salons, service counters, offices, and similar queue-based operations?
 
 ## Tech Stack
 - Frontend: Angular
@@ -20,15 +21,15 @@ SQLite is acceptable for MVP. If the app becomes production-critical or needs du
 ## High-Level Flow
 ```text
 Owner registers business account
-  -> Owner creates restaurant during registration
-  -> System generates RestaurantCode
-  -> Owner/manager can create manager accounts
-  -> Manager opens queue for the day
+  -> Owner creates a queue location during registration
+  -> System generates LocationCode
+  -> Owner/manager can create staff manager accounts
+  -> Manager opens queue for the day/session
   -> System provides customer QR join URL
   -> Customers join queue using QR
   -> Customer receives private live status link
   -> Manager calls and manages queue
-  -> Display screen shows current called token and last seated token
+  -> Display screen shows current called token and last served token
 ```
 
 ## Architecture
@@ -37,8 +38,8 @@ Frontend communicates with ASP.NET Core REST APIs.
 Backend handles:
 - authentication and authorization
 - owner and manager account management
-- restaurant registration and setup
-- restaurant code generation
+- business/location registration and setup
+- location code generation
 - QR join URL generation
 - token generation
 - business-day calculation
@@ -47,15 +48,15 @@ Backend handles:
 
 Database stores:
 - users
-- restaurants
-- user restaurant roles
+- queue locations
+- user location roles
 - queue entries
 - queue status/history fields
 
 ## User Roles
 
 ### Owner
-- Registers a business account and restaurant.
+- Registers a business account and queue location.
 - Can access manager dashboard.
 - Can create multiple manager accounts.
 - Can open and close the queue.
@@ -106,35 +107,37 @@ or:
 - IsActive
 - CreatedAt
 
-### Restaurant
+### QueueLocation
 - Id
-- Name
+- BusinessName
+- LocationName nullable
 - Address
 - Mobile
-- RestaurantCode
+- LocationCode
 - QueueResetTime
 - IsQueueOpen
 - CreatedAt
 
-`RestaurantCode` is used in public/customer URLs. It should not be treated as a secret.
+`LocationCode` is used in public/customer URLs. It should not be treated as a secret.
 
-### UserRestaurant
+### UserLocation
 - Id
 - UserId
-- RestaurantId
+- QueueLocationId
 - Role: Owner | Manager
 - CreatedAt
 
-This keeps the design flexible for future multi-restaurant support.
+This keeps the design flexible for future multi-location support.
 
 ### QueueEntry
 - Id
-- RestaurantId
+- QueueLocationId
 - BusinessDate
 - TokenNumber
 - CustomerName
 - MobileNumber nullable
-- GuestCount
+- PartySize nullable
+- ServiceReason nullable
 - Status
 - TrackingToken
 - CallCount
@@ -142,21 +145,21 @@ This keeps the design flexible for future multi-restaurant support.
 - SortOrder
 - CreatedAt
 - CalledAt nullable
-- SeatedAt nullable
+- ServedAt nullable
 - CancelledAt nullable
 - LastSkippedAt nullable
 
 ## Queue Status Values
 - Waiting
 - Called
-- Seated
+- Served
 - Skipped
 - Cancelled
 
 ## Business Day and Token Reset
-Token numbers reset daily per restaurant, but not at midnight.
+Token numbers reset daily per queue location, but not necessarily at midnight.
 
-Each restaurant has a configurable `QueueResetTime`, for example `04:00`.
+Each queue location has a configurable `QueueResetTime`, for example `04:00`.
 
 Business date rule:
 ```text
@@ -166,15 +169,15 @@ Else:
   BusinessDate = today
 ```
 
-This supports restaurants that stay open past midnight.
+This supports businesses that stay open past midnight or operate across long service sessions.
 
 Token numbers are generated per:
 ```text
-RestaurantId + BusinessDate
+QueueLocationId + BusinessDate
 ```
 
 ## Queue Open and Close Rules
-- Customers can join only when the restaurant queue is open.
+- Customers can join only when the queue is open.
 - Manager/owner must open the queue before accepting customers.
 - When the queue is closed:
   - new customers cannot join
@@ -185,21 +188,23 @@ RestaurantId + BusinessDate
 ## Customer Join Rules
 Customer QR URL:
 ```text
-/join/{restaurantCode}
+/join/{locationCode}
 ```
 
 Required customer fields:
 - CustomerName
-- GuestCount
 
 Optional customer fields:
 - MobileNumber
+- PartySize
+- ServiceReason
 
 Validation:
 - CustomerName is required.
-- GuestCount is required.
-- GuestCount max is 20.
+- PartySize is optional and must be a positive number when provided.
+- PartySize max is 20 for MVP.
 - MobileNumber is optional and may be local or country-code format.
+- ServiceReason is optional and should be short free text or a predefined option later.
 
 After joining, customer receives a private status URL:
 ```text
@@ -209,7 +214,7 @@ After joining, customer receives a private status URL:
 The tracking token prevents customers from guessing other queue entries.
 
 Customer live status page should show:
-- restaurant name
+- business/location name
 - token number
 - current status
 - current queue position when waiting
@@ -221,20 +226,20 @@ Managers can:
 - open queue
 - close queue
 - call next customer
-- mark called customer as seated
+- mark called customer as served
 - mark called customer as no response
 - move customer to skipped list
 - cancel customer
 - manually add walk-in customer
 - create manager accounts
 
-Multiple managers can be logged in for the same restaurant at the same time.
+Multiple managers can be logged in for the same queue location at the same time.
 
 Backend must own queue state and protect against conflicts. The UI should refresh/poll regularly, but business rules must be enforced by the API.
 
 ## Call Next Rules
 - `Call Next` picks the earliest Waiting entry by priority.
-- `Call Next` is disabled while any entry is currently Called for the same restaurant and business date.
+- `Call Next` is disabled while any entry is currently Called for the same queue location and business date.
 - Backend must enforce this rule and return `409 Conflict` if another Called entry already exists.
 - This must be handled atomically to support multiple managers using the dashboard.
 
@@ -243,7 +248,7 @@ Basic flow:
 Call Next
   -> earliest Waiting entry becomes Called
   -> Call Next becomes disabled
-  -> manager must choose Seated, No Response, Cancelled, or Move to Skipped
+  -> manager must choose Served, No Response, Cancelled, or Move to Skipped
   -> Call Next becomes available again
 ```
 
@@ -266,7 +271,7 @@ Display screen requires owner/manager login.
 
 Display screen is read-only and shows:
 - currently called token
-- last seated token
+- last served token
 
 For MVP, no separate display role is needed.
 
@@ -276,15 +281,16 @@ For MVP, no separate display role is needed.
 - owner name
 - email and/or mobile
 - password
-- restaurant name
-- restaurant address
-- restaurant mobile
+- business name
+- location name optional
+- address
+- business/location mobile
 
 Registration immediately creates:
 - owner user
-- restaurant
-- owner-restaurant role
-- restaurant code
+- queue location
+- owner-location role
+- location code
 
 No admin approval is required for MVP.
 
@@ -298,15 +304,16 @@ No admin approval is required for MVP.
 - Call Next button
 - waiting list
 - skipped list
-- seated/recent activity
+- served/recent activity
 - manual walk-in entry
 - manager creation
 
 ### Customer Join
-- restaurant name
+- business/location name
 - customer name
-- guest count
+- optional party size
 - optional mobile number
+- optional service reason
 - join queue button
 
 ### Customer Status
@@ -317,12 +324,12 @@ No admin approval is required for MVP.
 
 ### Display Screen
 - current called token
-- last seated token
+- last served token
 
 ## MVP Scope
 Must include:
 - owner self-registration
-- restaurant creation during owner registration
+- queue location creation during owner registration
 - owner/manager login
 - manager account creation
 - QR customer join
@@ -340,7 +347,7 @@ Must NOT include:
 - AI prediction
 - multi-branch management
 - WhatsApp notifications
-- table allocation
+- resource/counter/room allocation
 - multi-language support
 
 ## API Rules
@@ -359,7 +366,7 @@ Important status codes:
 - `400 Bad Request` for validation errors.
 - `401 Unauthorized` for missing/invalid login.
 - `403 Forbidden` for authenticated users without access.
-- `404 Not Found` for missing restaurant/queue entry.
+- `404 Not Found` for missing queue location/queue entry.
 - `409 Conflict` for invalid queue state conflicts, such as calling next while another token is already Called.
 
 ## Suggested API Endpoints
@@ -368,30 +375,30 @@ Important status codes:
 - `POST /api/auth/register-owner`
 - `POST /api/auth/login`
 
-### Restaurants
-- `GET /api/restaurants/{restaurantCode}`
-- `GET /api/restaurants/{restaurantId}/qr`
+### Queue Locations
+- `GET /api/locations/{locationCode}`
+- `GET /api/locations/{queueLocationId}/qr`
 
 ### Managers
-- `POST /api/restaurants/{restaurantId}/managers`
-- `GET /api/restaurants/{restaurantId}/managers`
+- `POST /api/locations/{queueLocationId}/managers`
+- `GET /api/locations/{queueLocationId}/managers`
 
 ### Queue
-- `POST /api/restaurants/{restaurantCode}/queue/join`
+- `POST /api/locations/{locationCode}/queue/join`
 - `GET /api/queue/{queueEntryId}/{trackingToken}`
-- `POST /api/restaurants/{restaurantId}/queue/open`
-- `POST /api/restaurants/{restaurantId}/queue/close`
-- `GET /api/restaurants/{restaurantId}/queue/today`
-- `POST /api/restaurants/{restaurantId}/queue/walk-in`
-- `POST /api/restaurants/{restaurantId}/queue/call-next`
-- `POST /api/queue/{queueEntryId}/seated`
+- `POST /api/locations/{queueLocationId}/queue/open`
+- `POST /api/locations/{queueLocationId}/queue/close`
+- `GET /api/locations/{queueLocationId}/queue/today`
+- `POST /api/locations/{queueLocationId}/queue/walk-in`
+- `POST /api/locations/{queueLocationId}/queue/call-next`
+- `POST /api/queue/{queueEntryId}/served`
 - `POST /api/queue/{queueEntryId}/no-response`
 - `POST /api/queue/{queueEntryId}/skipped`
 - `POST /api/queue/{queueEntryId}/restore`
 - `POST /api/queue/{queueEntryId}/cancel`
 
 ### Display
-- `GET /api/restaurants/{restaurantId}/display`
+- `GET /api/locations/{queueLocationId}/display`
 
 ## Coding Guidelines
 - Use clean architecture concepts.
@@ -404,21 +411,42 @@ Important status codes:
 - Keep validation explicit and easy to understand.
 - Prefer simple polling for live updates in MVP; SignalR can be added later.
 
+## Auto Refresh / Polling
+For MVP, use simple polling instead of SignalR.
+
+Screens that should auto-refresh:
+- Manager Dashboard: every 3-5 seconds.
+- Customer Status Page: every 5-10 seconds.
+- Display Screen: every 2-3 seconds.
+
+Customer Status Page and Display Screen should show a small "Last updated X seconds ago" indicator.
+
+The indicator should update every second on the frontend based on the last successful refresh time. Do not call the API every second just to update this label.
+
+If refresh fails, show a simple message such as:
+```text
+Unable to refresh. Retrying...
+```
+
+Polling should refresh queue state from the backend. The frontend may disable invalid buttons, but backend APIs must still enforce all queue rules.
+
 ## UI Guidelines
 - Mobile first.
 - Large buttons.
 - Minimal typing.
-- Easy for non-technical restaurant staff.
+- Easy for non-technical staff.
 - Make queue state obvious.
 - Disable actions that are not currently valid.
 - Show clear messages when another manager already changed queue state.
+- Avoid domain-specific labels unless the owner configures them for their business type.
 
 ## Future Scope
 - PostgreSQL for production durability
 - WhatsApp notifications
 - Wait-time estimation
 - Multi-language support
-- Table allocation system
+- Configurable service types/reasons
+- Resource/counter/room assignment
 - Multi-branch management
 - Separate read-only display role
 - SignalR real-time updates
