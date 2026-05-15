@@ -22,6 +22,52 @@ paths:
                 $ref: '#/components/schemas/HealthResponse'
               example:
                 status: Healthy
+  /api/owners/register:
+    post:
+      summary: Register an owner and first queue location
+      operationId: registerOwner
+      tags:
+        - Owners
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnerRegistrationRequest'
+            example:
+              ownerName: Priya Sharma
+              email: priya@example.com
+              mobile: '9876543210'
+              password: StrongPass123
+              businessName: Priya Dental Clinic
+              locationName: Main Branch
+              address: 12 MG Road, Bengaluru
+              businessMobile: '9876500000'
+      responses:
+        '201':
+          description: Owner account and queue location were created.
+          headers:
+            Location:
+              description: Public queue location URL.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnerRegistrationResponse'
+              example:
+                ownerId: 1
+                queueLocationId: 1
+                locationCode: AB7K2M9Q
+                businessName: Priya Dental Clinic
+                locationName: Main Branch
+                role: Owner
+        '400':
+          description: Registration request is invalid.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationProblemDetails'
 components:
   schemas:
     HealthResponse:
@@ -32,3 +78,111 @@ components:
         status:
           type: string
           example: Healthy
+    OwnerRegistrationRequest:
+      type: object
+      required:
+        - ownerName
+        - password
+        - businessName
+        - address
+        - businessMobile
+      properties:
+        ownerName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Priya Sharma
+        email:
+          type:
+            - string
+            - 'null'
+          format: email
+          maxLength: 254
+          example: priya@example.com
+        mobile:
+          type:
+            - string
+            - 'null'
+          maxLength: 30
+          example: '9876543210'
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+          format: password
+          example: StrongPass123
+        businessName:
+          type: string
+          minLength: 1
+          maxLength: 150
+          example: Priya Dental Clinic
+        locationName:
+          type:
+            - string
+            - 'null'
+          maxLength: 150
+          example: Main Branch
+        address:
+          type: string
+          minLength: 1
+          maxLength: 300
+          example: 12 MG Road, Bengaluru
+        businessMobile:
+          type: string
+          minLength: 1
+          maxLength: 30
+          example: '9876500000'
+      anyOf:
+        - required:
+            - email
+        - required:
+            - mobile
+    OwnerRegistrationResponse:
+      type: object
+      required:
+        - ownerId
+        - queueLocationId
+        - locationCode
+        - businessName
+        - role
+      properties:
+        ownerId:
+          type: integer
+          format: int32
+          example: 1
+        queueLocationId:
+          type: integer
+          format: int32
+          example: 1
+        locationCode:
+          type: string
+          example: AB7K2M9Q
+        businessName:
+          type: string
+          example: Priya Dental Clinic
+        locationName:
+          type:
+            - string
+            - 'null'
+          example: Main Branch
+        role:
+          type: string
+          enum:
+            - Owner
+          example: Owner
+    ValidationProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string

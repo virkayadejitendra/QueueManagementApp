@@ -1,0 +1,191 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+  color: #18211f;
+  background:
+    linear-gradient(135deg, rgba(31, 122, 140, 0.13), transparent 40%),
+    linear-gradient(315deg, rgba(198, 116, 46, 0.12), transparent 36%),
+    #f6f7f4;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.registration-page {
+  width: min(1120px, calc(100% - 32px));
+  min-height: 100dvh;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(320px, 1.35fr);
+  gap: 40px;
+  align-items: center;
+  padding: 40px 0;
+}
+
+.intro {
+  display: grid;
+  gap: 18px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: #1f7a8c;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  max-width: 520px;
+  font-size: clamp(2.2rem, 5vw, 4.6rem);
+  line-height: 1;
+  font-weight: 780;
+}
+
+.intro p:not(.eyebrow) {
+  max-width: 560px;
+  color: #56615d;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.registration-panel {
+  border: 1px solid #d9ded8;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 18px 50px rgba(24, 33, 31, 0.12);
+  padding: 28px;
+}
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 24px;
+}
+
+h2 {
+  margin-top: 4px;
+  font-size: 1.5rem;
+}
+
+.location-code {
+  border: 1px solid #b7c7c3;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #eef7f4;
+  color: #124c59;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+form {
+  display: grid;
+  gap: 18px;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+label {
+  display: grid;
+  gap: 7px;
+  color: #3c4643;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+input,
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #cdd4d1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #18211f;
+  font: inherit;
+  font-weight: 500;
+  padding: 11px 12px;
+}
+
+textarea {
+  resize: vertical;
+}
+
+input:focus,
+textarea:focus {
+  border-color: #1f7a8c;
+  outline: 3px solid rgba(31, 122, 140, 0.18);
+}
+
+.message {
+  border-radius: 6px;
+  padding: 12px 14px;
+  line-height: 1.45;
+}
+
+.error {
+  background: #fff0ec;
+  color: #9a321a;
+}
+
+.success {
+  background: #edf8f0;
+  color: #236032;
+}
+
+button {
+  width: fit-content;
+  min-width: 230px;
+  border: 0;
+  border-radius: 6px;
+  background: #1f7a8c;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 12px 18px;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+@media (max-width: 820px) {
+  .registration-page {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+}
+
+@media (max-width: 620px) {
+  .registration-page {
+    width: min(100% - 24px, 1120px);
+    padding: 24px 0;
+  }
+
+  .registration-panel {
+    padding: 20px;
+  }
+
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  button {
+    width: 100%;
+  }
+}

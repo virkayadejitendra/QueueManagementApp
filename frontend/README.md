@@ -2,6 +2,22 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.10.
 
+## Application configuration
+
+Environment-specific settings live in `src/environments`.
+
+- `src/environments/environment.ts` is used for local development.
+- `src/environments/environment.prod.ts` replaces it for production builds.
+- `apiBaseUrl` controls which backend API Angular calls.
+
+For local development, the API currently points to:
+
+```ts
+apiBaseUrl: 'http://localhost:5020'
+```
+
+For production, `apiBaseUrl` is set to an empty string so API calls use the same host as the Angular app, for example `/api/owners/register`. If the production API is hosted separately, set `apiBaseUrl` in `environment.prod.ts` to that deployed API URL.
+
 ## Development server
 
 To start a local development server, run:
@@ -44,10 +60,17 @@ ng generate --help
 To build the project run:
 
 ```bash
-ng build
+npm run build:prod
 ```
 
 This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+
+Useful build commands:
+
+```powershell
+npm run build:dev
+npm run build:prod
+```
 
 ## Running unit tests
 
