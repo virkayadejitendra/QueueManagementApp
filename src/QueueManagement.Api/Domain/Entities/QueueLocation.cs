@@ -1,4 +1,4 @@
-namespace QueueManagement.Api.Entities;
+namespace QueueManagement.Api.Domain.Entities;
 
 public sealed class QueueLocation
 {

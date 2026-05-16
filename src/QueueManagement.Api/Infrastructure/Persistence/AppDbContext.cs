@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using QueueManagement.Api.Entities;
+using QueueManagement.Api.Domain.Entities;
 
-namespace QueueManagement.Api.Data;
+namespace QueueManagement.Api.Infrastructure.Persistence;
 
 public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {

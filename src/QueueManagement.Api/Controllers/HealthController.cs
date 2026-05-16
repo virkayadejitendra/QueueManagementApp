@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using QueueManagement.Api.DTOs;
+using QueueManagement.Api.Application.DTOs;
 
 namespace QueueManagement.Api.Controllers;
 

@@ -1,14 +1,30 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Identity;
-using QueueManagement.Api.Data;
-using QueueManagement.Api.Entities;
+using QueueManagement.Api.Application.DTOs;
+using QueueManagement.Api.Application.Interfaces;
+using QueueManagement.Api.Application.Services;
+using QueueManagement.Api.Application.Validators;
+using QueueManagement.Api.Domain.Entities;
+using QueueManagement.Api.Filters;
+using QueueManagement.Api.Infrastructure.ExternalServices;
+using QueueManagement.Api.Infrastructure.Persistence;
+using QueueManagement.Api.Infrastructure.Repositories;
+using QueueManagement.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<FluentValidationActionFilter>();
+});
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<IOwnerRegistrationService, OwnerRegistrationService>();
+builder.Services.AddScoped<IOwnerRegistrationRepository, OwnerRegistrationRepository>();
+builder.Services.AddSingleton<ILocationCodeGenerator, LocationCodeGenerator>();
+builder.Services.AddScoped<IValidator<OwnerRegistrationRequest>, OwnerRegistrationRequestValidator>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
@@ -38,6 +54,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors("Frontend");
 app.MapControllers();

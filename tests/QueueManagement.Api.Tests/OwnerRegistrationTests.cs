@@ -7,8 +7,9 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using QueueManagement.Api.Data;
-using QueueManagement.Api.Entities;
+using QueueManagement.Api.Domain.BusinessRules;
+using QueueManagement.Api.Domain.Entities;
+using QueueManagement.Api.Infrastructure.Persistence;
 
 namespace QueueManagement.Api.Tests;
 
