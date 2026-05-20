@@ -112,6 +112,31 @@ describe('App', () => {
     expect(compiled.querySelector('[role="alert"]')?.textContent).toContain('The registration details are incomplete or invalid.');
   });
 
+  it('should show conflict feedback when the owner contact already exists', () => {
+    const fixture = TestBed.createComponent(App);
+    const http = TestBed.inject(HttpTestingController);
+
+    fillRegistrationForm(fixture, {
+      ownerName: 'Priya Sharma',
+      email: 'priya@example.com',
+      password: 'StrongPass123',
+      businessName: 'Priya Dental Clinic',
+      address: '12 MG Road, Bengaluru',
+      businessMobile: '9876500000'
+    });
+    submitRegistrationForm(fixture);
+
+    const request = http.expectOne('http://localhost:5020/api/owners/register');
+    request.flush(
+      { status: 409, title: 'Owner contact already exists.' },
+      { status: 409, statusText: 'Conflict' });
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('[role="alert"]')?.textContent)
+      .toContain('An owner with this email or mobile number is already registered.');
+  });
+
   function fillRegistrationForm(
     fixture: ComponentFixture<App>,
     values: Partial<Record<string, string>>): void {

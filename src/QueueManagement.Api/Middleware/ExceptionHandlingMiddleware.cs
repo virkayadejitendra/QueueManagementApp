@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using QueueManagement.Api.Application.Exceptions;
 
 namespace QueueManagement.Api.Middleware;
 
@@ -11,6 +12,31 @@ public sealed class ExceptionHandlingMiddleware(
         try
         {
             await next(context);
+        }
+        catch (DuplicateOwnerContactException exception)
+        {
+            logger.LogInformation(
+                exception,
+                "Owner registration conflict while processing {Method} {Path}.",
+                context.Request.Method,
+                context.Request.Path);
+
+            if (context.Response.HasStarted)
+            {
+                throw;
+            }
+
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/problem+json";
+
+            var problem = new ProblemDetails
+            {
+                Status = StatusCodes.Status409Conflict,
+                Title = "Owner contact already exists.",
+                Detail = exception.Message
+            };
+
+            await context.Response.WriteAsJsonAsync(problem, context.RequestAborted);
         }
         catch (Exception exception)
         {

@@ -97,6 +97,86 @@ public sealed class OwnerRegistrationTests
     }
 
     [Fact]
+    public async Task RegisterOwner_WithDuplicateEmail_ReturnsConflict()
+    {
+        using var factory = new QueueManagementApiFactory();
+        using var client = factory.CreateClient();
+
+        await client.PostAsJsonAsync("/api/owners/register", new
+        {
+            ownerName = "Priya Sharma",
+            email = "priya@example.com",
+            password = "StrongPass123",
+            businessName = "Priya Dental Clinic",
+            address = "12 MG Road, Bengaluru",
+            businessMobile = "9876500000"
+        });
+
+        var response = await client.PostAsJsonAsync("/api/owners/register", new
+        {
+            ownerName = "Priya Sharma",
+            email = "PRIYA@example.com",
+            password = "StrongPass123",
+            businessName = "Priya Dental Clinic",
+            address = "12 MG Road, Bengaluru",
+            businessMobile = "9876500000"
+        });
+
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal(409, problem.GetProperty("status").GetInt32());
+        Assert.Equal("Owner contact already exists.", problem.GetProperty("title").GetString());
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        Assert.Equal(1, await dbContext.Users.CountAsync());
+        Assert.Equal(1, await dbContext.QueueLocations.CountAsync());
+        Assert.Equal(1, await dbContext.UserLocations.CountAsync());
+    }
+
+    [Fact]
+    public async Task RegisterOwner_WithDuplicateMobile_ReturnsConflict()
+    {
+        using var factory = new QueueManagementApiFactory();
+        using var client = factory.CreateClient();
+
+        await client.PostAsJsonAsync("/api/owners/register", new
+        {
+            ownerName = "Priya Sharma",
+            mobile = "9876543210",
+            password = "StrongPass123",
+            businessName = "Priya Dental Clinic",
+            address = "12 MG Road, Bengaluru",
+            businessMobile = "9876500000"
+        });
+
+        var response = await client.PostAsJsonAsync("/api/owners/register", new
+        {
+            ownerName = "Anika Rao",
+            mobile = "9876543210",
+            password = "StrongPass123",
+            businessName = "Anika Salon",
+            address = "22 Residency Road, Bengaluru",
+            businessMobile = "9876500001"
+        });
+
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal(409, problem.GetProperty("status").GetInt32());
+        Assert.Equal("Owner contact already exists.", problem.GetProperty("title").GetString());
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        Assert.Equal(1, await dbContext.Users.CountAsync());
+        Assert.Equal(1, await dbContext.QueueLocations.CountAsync());
+        Assert.Equal(1, await dbContext.UserLocations.CountAsync());
+    }
+
+    [Fact]
     public async Task RegisterOwner_WithWhitespaceRequiredFields_ReturnsValidationProblem()
     {
         using var factory = new QueueManagementApiFactory();

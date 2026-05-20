@@ -9,6 +9,8 @@ public sealed class OwnerRegistrationRequestValidator : AbstractValidator<OwnerR
     {
         RuleFor(request => request.OwnerName)
             .NotEmpty()
+            .Must(NotBeWhiteSpace)
+            .WithMessage("Owner name is required.")
             .MaximumLength(100);
 
         RuleFor(request => request.Email)
@@ -26,6 +28,8 @@ public sealed class OwnerRegistrationRequestValidator : AbstractValidator<OwnerR
 
         RuleFor(request => request.BusinessName)
             .NotEmpty()
+            .Must(NotBeWhiteSpace)
+            .WithMessage("Business name is required.")
             .MaximumLength(150);
 
         RuleFor(request => request.LocationName)
@@ -33,10 +37,14 @@ public sealed class OwnerRegistrationRequestValidator : AbstractValidator<OwnerR
 
         RuleFor(request => request.Address)
             .NotEmpty()
+            .Must(NotBeWhiteSpace)
+            .WithMessage("Address is required.")
             .MaximumLength(300);
 
         RuleFor(request => request.BusinessMobile)
             .NotEmpty()
+            .Must(NotBeWhiteSpace)
+            .WithMessage("Business mobile is required.")
             .MaximumLength(30);
 
         RuleFor(request => request.Email)
@@ -52,5 +60,10 @@ public sealed class OwnerRegistrationRequestValidator : AbstractValidator<OwnerR
     {
         return !string.IsNullOrWhiteSpace(request.Email)
             || !string.IsNullOrWhiteSpace(request.Mobile);
+    }
+
+    private static bool NotBeWhiteSpace(string value)
+    {
+        return !string.IsNullOrWhiteSpace(value);
     }
 }

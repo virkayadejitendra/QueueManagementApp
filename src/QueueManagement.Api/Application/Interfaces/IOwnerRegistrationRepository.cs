@@ -4,6 +4,10 @@ namespace QueueManagement.Api.Application.Interfaces;
 
 public interface IOwnerRegistrationRepository
 {
+    Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken);
+
+    Task<bool> MobileExistsAsync(string mobile, CancellationToken cancellationToken);
+
     Task<bool> LocationCodeExistsAsync(string locationCode, CancellationToken cancellationToken);
 
     Task AddRegistrationAsync(

@@ -1,16 +1,8 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { apiUrl } from './core/api-url';
-
-type OwnerRegistrationResponse = {
-  ownerId: number;
-  queueLocationId: number;
-  locationCode: string;
-  businessName: string;
-  locationName: string | null;
-  role: string;
-};
+import { OwnerRegistrationApi } from './owner-registration/owner-registration-api';
+import { OwnerRegistrationResponse } from './owner-registration/owner-registration.models';
 
 @Component({
   selector: 'app-root',
@@ -20,7 +12,7 @@ type OwnerRegistrationResponse = {
 })
 export class App {
   private readonly formBuilder = inject(FormBuilder);
-  private readonly http = inject(HttpClient);
+  private readonly ownerRegistrationApi = inject(OwnerRegistrationApi);
 
   protected readonly isSubmitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
@@ -56,15 +48,15 @@ export class App {
 
     this.isSubmitting.set(true);
 
-    this.http.post<OwnerRegistrationResponse>(apiUrl('/api/owners/register'), {
-      ownerName: formValue.ownerName,
-      email: formValue.email || null,
-      mobile: formValue.mobile || null,
+    this.ownerRegistrationApi.register({
+      ownerName: formValue.ownerName.trim(),
+      email: this.normalizeOptional(formValue.email),
+      mobile: this.normalizeOptional(formValue.mobile),
       password: formValue.password,
-      businessName: formValue.businessName,
-      locationName: formValue.locationName || null,
-      address: formValue.address,
-      businessMobile: formValue.businessMobile
+      businessName: formValue.businessName.trim(),
+      locationName: this.normalizeOptional(formValue.locationName),
+      address: formValue.address.trim(),
+      businessMobile: formValue.businessMobile.trim()
     }).subscribe({
       next: response => {
         this.registration.set(response);
@@ -83,6 +75,15 @@ export class App {
       return 'The registration details are incomplete or invalid.';
     }
 
+    if (error instanceof HttpErrorResponse && error.status === 409) {
+      return 'An owner with this email or mobile number is already registered.';
+    }
+
     return 'Registration could not be completed. Check that the API is running and try again.';
+  }
+
+  private normalizeOptional(value: string): string | null {
+    const trimmedValue = value.trim();
+    return trimmedValue ? trimmedValue : null;
   }
 }

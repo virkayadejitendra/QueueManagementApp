@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using QueueManagement.Api.Application.DTOs;
+using QueueManagement.Api.Application.Exceptions;
 using QueueManagement.Api.Application.Interfaces;
 using QueueManagement.Api.Domain.BusinessRules;
 using QueueManagement.Api.Domain.Entities;
@@ -21,11 +22,16 @@ public sealed class OwnerRegistrationService(
     {
         logger.LogInformation("Registering owner for business {BusinessName}.", request.BusinessName);
 
+        var email = NormalizeEmail(request.Email);
+        var mobile = NormalizeOptional(request.Mobile);
+
+        await EnsureOwnerContactIsAvailableAsync(email, mobile, cancellationToken);
+
         var owner = new User
         {
             Name = request.OwnerName.Trim(),
-            Email = NormalizeOptional(request.Email),
-            Mobile = NormalizeOptional(request.Mobile),
+            Email = email,
+            Mobile = mobile,
             PasswordHash = string.Empty
         };
 
@@ -76,6 +82,27 @@ public sealed class OwnerRegistrationService(
         }
 
         throw new InvalidOperationException("Unable to generate a unique location code.");
+    }
+
+    private async Task EnsureOwnerContactIsAvailableAsync(
+        string? email,
+        string? mobile,
+        CancellationToken cancellationToken)
+    {
+        if (email is not null && await repository.EmailExistsAsync(email, cancellationToken))
+        {
+            throw new DuplicateOwnerContactException("An owner with this email is already registered.");
+        }
+
+        if (mobile is not null && await repository.MobileExistsAsync(mobile, cancellationToken))
+        {
+            throw new DuplicateOwnerContactException("An owner with this mobile number is already registered.");
+        }
+    }
+
+    private static string? NormalizeEmail(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToLowerInvariant();
     }
 
     private static string? NormalizeOptional(string? value)

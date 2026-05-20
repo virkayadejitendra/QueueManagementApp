@@ -68,6 +68,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ValidationProblemDetails'
+        '409':
+          description: Owner email or mobile number is already registered.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
 components:
   schemas:
     HealthResponse:
@@ -186,3 +192,15 @@ components:
             type: array
             items:
               type: string
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
