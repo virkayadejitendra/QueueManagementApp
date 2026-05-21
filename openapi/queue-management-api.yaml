@@ -74,7 +74,73 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
+  /api/auth/login:
+    post:
+      summary: Log in as an owner or manager
+      operationId: login
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              email:
+                value:
+                  identifier: priya@example.com
+                  password: StrongPass123
+              mobile:
+                value:
+                  identifier: '9876543210'
+                  password: StrongPass123
+      responses:
+        '200':
+          description: Login succeeded and returned a bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              example:
+                accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                tokenType: Bearer
+                expiresIn: 3600
+                userId: 1
+                name: Priya Sharma
+                roles:
+                  - Owner
+        '400':
+          description: Login request is invalid.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationProblemDetails'
+        '401':
+          description: Identifier or password is invalid.
+  /api/auth/me:
+    get:
+      summary: Get the current authenticated user
+      operationId: getCurrentUser
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current authenticated user details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUserResponse'
+        '401':
+          description: Missing or invalid bearer token.
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     HealthResponse:
       type: object
@@ -176,6 +242,73 @@ components:
           enum:
             - Owner
           example: Owner
+    LoginRequest:
+      type: object
+      required:
+        - identifier
+        - password
+      properties:
+        identifier:
+          type: string
+          minLength: 1
+          maxLength: 254
+          example: priya@example.com
+        password:
+          type: string
+          minLength: 1
+          maxLength: 100
+          format: password
+          example: StrongPass123
+    LoginResponse:
+      type: object
+      required:
+        - accessToken
+        - tokenType
+        - expiresIn
+        - userId
+        - name
+        - roles
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          enum:
+            - Bearer
+        expiresIn:
+          type: integer
+          format: int32
+          example: 3600
+        userId:
+          type: integer
+          format: int32
+          example: 1
+        name:
+          type: string
+          example: Priya Sharma
+        roles:
+          type: array
+          items:
+            type: string
+            enum:
+              - Owner
+              - Manager
+    CurrentUserResponse:
+      type: object
+      required:
+        - userId
+        - name
+        - roles
+      properties:
+        userId:
+          type: integer
+          format: int32
+        name:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
     ValidationProblemDetails:
       type: object
       properties:

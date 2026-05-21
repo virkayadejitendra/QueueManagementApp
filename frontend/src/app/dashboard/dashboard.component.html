@@ -1,0 +1,62 @@
+<main class="dashboard-shell">
+  <aside class="side-panel" aria-label="Manager navigation">
+    <div class="brand-block">
+      <p class="eyebrow">Queue Management</p>
+      <h1>Manager</h1>
+    </div>
+
+    <nav>
+      @for (item of navigationItems; track item.label) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          [class.disabled]="!item.isReady"
+          [attr.aria-disabled]="!item.isReady">
+          <span>{{ item.label }}</span>
+          @if (!item.isReady) {
+            <small>Soon</small>
+          }
+        </a>
+      }
+    </nav>
+
+    <button class="sign-out-button" type="button" (click)="signOut()">
+      Sign out
+    </button>
+  </aside>
+
+  <section class="dashboard-content" aria-labelledby="dashboard-title">
+    <header>
+      <div>
+        <p class="eyebrow">Day 3</p>
+        <h2 id="dashboard-title">Dashboard</h2>
+      </div>
+      <span class="status-chip">Signed in</span>
+    </header>
+
+    <div class="dashboard-grid">
+      <article class="summary-tile">
+        <span>Queue status</span>
+        <strong>Not opened</strong>
+      </article>
+
+      <article class="summary-tile">
+        <span>Waiting</span>
+        <strong>0</strong>
+      </article>
+
+      <article class="summary-tile">
+        <span>Current token</span>
+        <strong>-</strong>
+      </article>
+    </div>
+
+    <section class="empty-state">
+      <h3>Queue operations arrive on Day 5</h3>
+      <p>
+        Login is ready. This dashboard is the authenticated landing page where open queue,
+        walk-in, call-next, and customer status controls will be added.
+      </p>
+    </section>
+  </section>
+</main>

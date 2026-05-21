@@ -1,0 +1,80 @@
+<main class="auth-page single-panel-page">
+  <section class="intro">
+    <p class="eyebrow">Queue Management App</p>
+    <h1>Register your business queue</h1>
+    <p>Create the owner account and first queue location together.</p>
+  </section>
+
+  <section class="auth-panel" aria-labelledby="registration-title">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">Day 2</p>
+        <h2 id="registration-title">Owner registration</h2>
+      </div>
+      @if (registration(); as createdLocation) {
+        <span class="status-chip">{{ createdLocation.locationCode }}</span>
+      }
+    </div>
+
+    <form class="registration-form" [formGroup]="registrationForm" (ngSubmit)="submitRegistration()">
+      <div class="field-grid">
+        <label>
+          Owner name
+          <input type="text" formControlName="ownerName" autocomplete="name" />
+        </label>
+
+        <label>
+          Password
+          <input type="password" formControlName="password" autocomplete="new-password" />
+        </label>
+
+        <label>
+          Email
+          <input type="email" formControlName="email" autocomplete="email" />
+        </label>
+
+        <label>
+          Mobile
+          <input type="tel" formControlName="mobile" autocomplete="tel" />
+        </label>
+
+        <label>
+          Business name
+          <input type="text" formControlName="businessName" autocomplete="organization" />
+        </label>
+
+        <label>
+          Location name
+          <input type="text" formControlName="locationName" placeholder="Main Branch" />
+        </label>
+
+        <label class="wide">
+          Address
+          <textarea rows="3" formControlName="address" autocomplete="street-address"></textarea>
+        </label>
+
+        <label>
+          Business mobile
+          <input type="tel" formControlName="businessMobile" autocomplete="tel" />
+        </label>
+      </div>
+
+      @if (errorMessage(); as message) {
+        <p class="message error" role="alert">{{ message }}</p>
+      }
+
+      @if (registration(); as createdLocation) {
+        <div class="message success" role="status">
+          <strong>{{ createdLocation.businessName }}</strong> is ready. Public location code: {{ createdLocation.locationCode }}.
+        </div>
+      }
+
+      <div class="form-actions">
+        <button type="submit" [disabled]="isSubmitting()">
+          {{ isSubmitting() ? 'Creating location...' : 'Create owner and location' }}
+        </button>
+        <a routerLink="/login">Back to sign in</a>
+      </div>
+    </form>
+  </section>
+</main>

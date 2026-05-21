@@ -1,0 +1,50 @@
+<main class="auth-page single-panel-page">
+  <section class="intro">
+    <p class="eyebrow">Queue Management App</p>
+    <h1>Run your business queue</h1>
+    <p>Sign in as an owner or manager to access private queue tools.</p>
+  </section>
+
+  <section class="auth-panel" aria-labelledby="login-title">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">Day 3</p>
+        <h2 id="login-title">Owner or manager login</h2>
+      </div>
+      @if (login(); as activeLogin) {
+        <span class="status-chip">{{ activeLogin.tokenType }}</span>
+      }
+    </div>
+
+    <form class="login-form" [formGroup]="loginForm" (ngSubmit)="submitLogin()">
+      <div class="field-grid compact">
+        <label>
+          Email or mobile
+          <input type="text" formControlName="identifier" autocomplete="username" />
+        </label>
+
+        <label>
+          Password
+          <input type="password" formControlName="password" autocomplete="current-password" />
+        </label>
+      </div>
+
+      @if (loginErrorMessage(); as message) {
+        <p class="message error" role="alert">{{ message }}</p>
+      }
+
+      @if (login(); as activeLogin) {
+        <div class="message success" role="status">
+          <strong>{{ activeLogin.name }}</strong> is signed in with {{ activeLogin.roles.join(', ') }} access.
+        </div>
+      }
+
+      <div class="form-actions">
+        <button type="submit" [disabled]="isLoggingIn()">
+          {{ isLoggingIn() ? 'Signing in...' : 'Sign in' }}
+        </button>
+        <a routerLink="/register">Create owner account</a>
+      </div>
+    </form>
+  </section>
+</main>
