@@ -115,7 +115,7 @@ h2 {
 }
 
 .summary-tile,
-.empty-state {
+.queue-controls {
   border: 1px solid #d9ded8;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.86);
@@ -137,15 +137,47 @@ h2 {
   overflow-wrap: anywhere;
 }
 
-.empty-state {
+.queue-controls {
   display: grid;
-  gap: 10px;
+  gap: 16px;
 }
 
-.empty-state p {
+.queue-controls p {
   max-width: 760px;
   color: #58635f;
   line-height: 1.6;
+}
+
+.queue-controls a {
+  color: #1f6270;
+  font-weight: 800;
+}
+
+.control-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.secondary-button {
+  border: 1px solid #cdd4d1;
+  background: #ffffff;
+  color: #34413d;
+}
+
+.danger-button {
+  background: #9a321a;
+}
+
+.message {
+  border-radius: 6px;
+  padding: 12px 14px;
+  line-height: 1.45;
+}
+
+.error {
+  background: #fff0ec;
+  color: #9a321a;
 }
 
 @media (max-width: 820px) {
@@ -191,7 +223,12 @@ h2 {
   }
 
   .summary-tile,
-  .empty-state {
+  .queue-controls {
     padding: 16px;
+  }
+
+  .control-actions button {
+    width: 100%;
+    min-width: 0;
   }
 }

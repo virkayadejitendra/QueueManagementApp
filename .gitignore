@@ -6,6 +6,8 @@ dist/
 .vs/
 .vscode/
 *.user
+*.log
+*.bak
 *.db
 *.db-shm
 *.db-wal

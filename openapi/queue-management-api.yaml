@@ -135,6 +135,140 @@ paths:
                 $ref: '#/components/schemas/CurrentUserResponse'
         '401':
           description: Missing or invalid bearer token.
+  /api/locations/{locationCode}/queue-entries:
+    post:
+      summary: Join a public customer queue
+      operationId: joinCustomerQueue
+      tags:
+        - Customer Queue
+      parameters:
+        - name: locationCode
+          in: path
+          required: true
+          schema:
+            type: string
+          example: AB7K2M9Q
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerJoinQueueRequest'
+            example:
+              customerName: Amit Kumar
+              mobile: '9876543210'
+              partySize: 2
+              serviceReason: Consultation
+      responses:
+        '201':
+          description: Customer joined the queue and received a private status link.
+          headers:
+            Location:
+              description: Private customer status URL.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerJoinQueueResponse'
+              example:
+                queueEntryId: 10
+                queueLocationId: 1
+                locationCode: AB7K2M9Q
+                tokenNumber: 1
+                status: Waiting
+                trackingToken: rA7kXJ3mR1T8vF2pQ9sL0wY6nB4cD5eG
+                statusUrl: /status/10/rA7kXJ3mR1T8vF2pQ9sL0wY6nB4cD5eG
+        '400':
+          description: Join request is invalid.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationProblemDetails'
+        '404':
+          description: Location code was not found.
+        '409':
+          description: Queue is currently closed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/manager/queue/status:
+    get:
+      summary: Get the authenticated manager queue status
+      operationId: getManagerQueueStatus
+      tags:
+        - Manager Queue
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current queue status for the user's assigned location.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagerQueueStatusResponse'
+        '401':
+          description: Missing or invalid bearer token.
+        '404':
+          description: User does not have an assigned queue location.
+  /api/manager/queue/open:
+    post:
+      summary: Open the authenticated manager queue
+      operationId: openManagerQueue
+      tags:
+        - Manager Queue
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Queue was opened.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagerQueueStatusResponse'
+        '401':
+          description: Missing or invalid bearer token.
+        '404':
+          description: User does not have an assigned queue location.
+  /api/manager/queue/close:
+    post:
+      summary: Close the authenticated manager queue
+      operationId: closeManagerQueue
+      tags:
+        - Manager Queue
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Queue was closed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagerQueueStatusResponse'
+        '401':
+          description: Missing or invalid bearer token.
+        '404':
+          description: User does not have an assigned queue location.
+  /api/manager/queue/reset:
+    post:
+      summary: Reset today's queue for the authenticated manager
+      operationId: resetManagerQueue
+      tags:
+        - Manager Queue
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Today's queue entries were cleared and the queue was closed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagerQueueStatusResponse'
+        '401':
+          description: Missing or invalid bearer token.
+        '404':
+          description: User does not have an assigned queue location.
 components:
   securitySchemes:
     bearerAuth:
@@ -309,6 +443,104 @@ components:
           type: array
           items:
             type: string
+    CustomerJoinQueueRequest:
+      type: object
+      required:
+        - customerName
+      properties:
+        customerName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Amit Kumar
+        mobile:
+          type:
+            - string
+            - 'null'
+          maxLength: 30
+          example: '9876543210'
+        partySize:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          minimum: 1
+          maximum: 50
+          example: 2
+        serviceReason:
+          type:
+            - string
+            - 'null'
+          maxLength: 200
+          example: Consultation
+    CustomerJoinQueueResponse:
+      type: object
+      required:
+        - queueEntryId
+        - queueLocationId
+        - locationCode
+        - tokenNumber
+        - status
+        - trackingToken
+        - statusUrl
+      properties:
+        queueEntryId:
+          type: integer
+          format: int32
+          example: 10
+        queueLocationId:
+          type: integer
+          format: int32
+          example: 1
+        locationCode:
+          type: string
+          example: AB7K2M9Q
+        tokenNumber:
+          type: integer
+          format: int32
+          example: 1
+        status:
+          type: string
+          enum:
+            - Waiting
+          example: Waiting
+        trackingToken:
+          type: string
+        statusUrl:
+          type: string
+          example: /status/10/rA7kXJ3mR1T8vF2pQ9sL0wY6nB4cD5eG
+    ManagerQueueStatusResponse:
+      type: object
+      required:
+        - queueLocationId
+        - locationCode
+        - businessName
+        - isQueueOpen
+        - waitingCount
+      properties:
+        queueLocationId:
+          type: integer
+          format: int32
+          example: 1
+        locationCode:
+          type: string
+          example: AB7K2M9Q
+        businessName:
+          type: string
+          example: Priya Dental Clinic
+        isQueueOpen:
+          type: boolean
+          example: true
+        waitingCount:
+          type: integer
+          format: int32
+          example: 0
+        currentTokenNumber:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          example: 1
     ValidationProblemDetails:
       type: object
       properties:

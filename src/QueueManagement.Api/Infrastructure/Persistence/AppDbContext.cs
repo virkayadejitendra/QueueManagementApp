@@ -8,6 +8,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<User> Users => Set<User>();
     public DbSet<QueueLocation> QueueLocations => Set<QueueLocation>();
     public DbSet<UserLocation> UserLocations => Set<UserLocation>();
+    public DbSet<QueueEntry> QueueEntries => Set<QueueEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -40,6 +41,22 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
                 userLocation.QueueLocationId,
                 userLocation.Role
             }).IsUnique();
+        });
+
+        modelBuilder.Entity<QueueEntry>(entity =>
+        {
+            entity.Property(queueEntry => queueEntry.CustomerName).HasMaxLength(100);
+            entity.Property(queueEntry => queueEntry.Mobile).HasMaxLength(30);
+            entity.Property(queueEntry => queueEntry.ServiceReason).HasMaxLength(200);
+            entity.Property(queueEntry => queueEntry.TrackingToken).HasMaxLength(64);
+            entity.Property(queueEntry => queueEntry.Status).HasMaxLength(20);
+            entity.HasIndex(queueEntry => new
+            {
+                queueEntry.QueueLocationId,
+                queueEntry.BusinessDate,
+                queueEntry.TokenNumber
+            }).IsUnique();
+            entity.HasIndex(queueEntry => queueEntry.TrackingToken).IsUnique();
         });
     }
 }

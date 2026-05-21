@@ -2,6 +2,7 @@ using System.Text;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using QueueManagement.Api.Application.DTOs;
 using QueueManagement.Api.Application.Interfaces;
@@ -27,9 +28,14 @@ builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<ICustomerQueueService, CustomerQueueService>();
+builder.Services.AddScoped<ICustomerQueueRepository, CustomerQueueRepository>();
+builder.Services.AddScoped<IManagerQueueService, ManagerQueueService>();
+builder.Services.AddScoped<IManagerQueueRepository, ManagerQueueRepository>();
 builder.Services.AddScoped<IOwnerRegistrationService, OwnerRegistrationService>();
 builder.Services.AddScoped<IOwnerRegistrationRepository, OwnerRegistrationRepository>();
 builder.Services.AddSingleton<ILocationCodeGenerator, LocationCodeGenerator>();
+builder.Services.AddScoped<IValidator<CustomerJoinQueueRequest>, CustomerJoinQueueRequestValidator>();
 builder.Services.AddScoped<IValidator<LoginRequest>, LoginRequestValidator>();
 builder.Services.AddScoped<IValidator<OwnerRegistrationRequest>, OwnerRegistrationRequestValidator>();
 builder.Services
@@ -77,6 +83,31 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     dbContext.Database.EnsureCreated();
+    dbContext.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS "QueueEntries" (
+            "Id" INTEGER NOT NULL CONSTRAINT "PK_QueueEntries" PRIMARY KEY AUTOINCREMENT,
+            "QueueLocationId" INTEGER NOT NULL,
+            "CustomerName" TEXT NOT NULL,
+            "Mobile" TEXT NULL,
+            "PartySize" INTEGER NULL,
+            "ServiceReason" TEXT NULL,
+            "BusinessDate" TEXT NOT NULL,
+            "TokenNumber" INTEGER NOT NULL,
+            "TrackingToken" TEXT NOT NULL,
+            "Status" TEXT NOT NULL,
+            "CreatedAt" TEXT NOT NULL,
+            CONSTRAINT "FK_QueueEntries_QueueLocations_QueueLocationId"
+                FOREIGN KEY ("QueueLocationId") REFERENCES "QueueLocations" ("Id") ON DELETE CASCADE
+        );
+        """);
+    dbContext.Database.ExecuteSqlRaw("""
+        CREATE UNIQUE INDEX IF NOT EXISTS "IX_QueueEntries_QueueLocationId_BusinessDate_TokenNumber"
+        ON "QueueEntries" ("QueueLocationId", "BusinessDate", "TokenNumber");
+        """);
+    dbContext.Database.ExecuteSqlRaw("""
+        CREATE UNIQUE INDEX IF NOT EXISTS "IX_QueueEntries_TrackingToken"
+        ON "QueueEntries" ("TrackingToken");
+        """);
 }
 
 // Configure the HTTP request pipeline.

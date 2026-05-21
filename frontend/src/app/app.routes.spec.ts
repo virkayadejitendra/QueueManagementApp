@@ -1,5 +1,7 @@
 import { routes } from './app.routes';
 import { LoginComponent } from './auth/login.component';
+import { CustomerJoinComponent } from './customer-join/customer-join.component';
+import { CustomerStatusPlaceholderComponent } from './customer-status/customer-status-placeholder.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { OwnerRegistrationComponent } from './owner-registration/owner-registration.component';
 
@@ -27,6 +29,17 @@ describe('routes', () => {
     expect(routes).toContainEqual({
       path: 'dashboard',
       component: DashboardComponent
+    });
+  });
+
+  it('should expose public customer join and private status routes', () => {
+    expect(routes).toContainEqual({
+      path: 'join/:locationCode',
+      component: CustomerJoinComponent
+    });
+    expect(routes).toContainEqual({
+      path: 'status/:queueEntryId/:trackingToken',
+      component: CustomerStatusPlaceholderComponent
     });
   });
 });

@@ -28,35 +28,57 @@
   <section class="dashboard-content" aria-labelledby="dashboard-title">
     <header>
       <div>
-        <p class="eyebrow">Day 3</p>
+        <p class="eyebrow">Manager queue</p>
         <h2 id="dashboard-title">Dashboard</h2>
       </div>
-      <span class="status-chip">Signed in</span>
+      <span class="status-chip">{{ queueStatus()?.isQueueOpen ? 'Open' : 'Closed' }}</span>
     </header>
 
     <div class="dashboard-grid">
       <article class="summary-tile">
         <span>Queue status</span>
-        <strong>Not opened</strong>
+        <strong>{{ queueStatus()?.isQueueOpen ? 'Open' : 'Closed' }}</strong>
       </article>
 
       <article class="summary-tile">
         <span>Waiting</span>
-        <strong>0</strong>
+        <strong>{{ queueStatus()?.waitingCount ?? 0 }}</strong>
       </article>
 
       <article class="summary-tile">
         <span>Current token</span>
-        <strong>-</strong>
+        <strong>{{ queueStatus()?.currentTokenNumber ?? '-' }}</strong>
       </article>
     </div>
 
-    <section class="empty-state">
-      <h3>Queue operations arrive on Day 5</h3>
-      <p>
-        Login is ready. This dashboard is the authenticated landing page where open queue,
-        walk-in, call-next, and customer status controls will be added.
-      </p>
+    <section class="queue-controls" aria-labelledby="queue-controls-title">
+      <div>
+        <h3 id="queue-controls-title">{{ queueStatus()?.businessName ?? 'Queue location' }}</h3>
+        @if (queueStatus(); as status) {
+          <p>
+            Public join link:
+            <a [routerLink]="joinUrl">{{ status.locationCode }}</a>
+          </p>
+        } @else {
+          <p>Load your assigned queue location to manage customer joining.</p>
+        }
+      </div>
+
+      @if (queueActionErrorMessage(); as message) {
+        <p class="message error" role="alert">{{ message }}</p>
+      }
+
+      <div class="control-actions">
+        <button type="button" (click)="openQueue()" [disabled]="isLoadingQueue() || queueStatus()?.isQueueOpen">
+          Open queue
+        </button>
+        <button type="button" class="secondary-button" (click)="closeQueue()" [disabled]="isLoadingQueue() || !queueStatus()?.isQueueOpen">
+          Close queue
+        </button>
+        <button type="button" class="danger-button" (click)="resetQueue()" [disabled]="isLoadingQueue()">
+          Reset queue
+        </button>
+      </div>
     </section>
   </section>
 </main>

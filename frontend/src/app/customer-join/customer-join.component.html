@@ -1,0 +1,50 @@
+<main class="auth-page single-panel-page">
+  <section class="intro">
+    <p class="eyebrow">Public queue</p>
+    <h1>Join the queue</h1>
+    <p>Enter your details and keep the private status link after joining.</p>
+  </section>
+
+  <section class="auth-panel" aria-labelledby="join-title">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">Location {{ locationCode }}</p>
+        <h2 id="join-title">Customer details</h2>
+      </div>
+    </div>
+
+    <form [formGroup]="joinForm" (ngSubmit)="joinQueue()">
+      <div class="field-grid compact">
+        <label>
+          Name
+          <input type="text" formControlName="customerName" autocomplete="name" />
+        </label>
+
+        <label>
+          Mobile
+          <input type="tel" formControlName="mobile" autocomplete="tel" />
+        </label>
+
+        <label>
+          Party size
+          <input type="number" min="1" max="50" formControlName="partySize" />
+        </label>
+
+        <label>
+          Service reason
+          <textarea rows="3" formControlName="serviceReason"></textarea>
+        </label>
+      </div>
+
+      @if (errorMessage(); as message) {
+        <p class="message error" role="alert">{{ message }}</p>
+      }
+
+      <div class="form-actions">
+        <button type="submit" [disabled]="isSubmitting()">
+          {{ isSubmitting() ? 'Joining...' : 'Join queue' }}
+        </button>
+      </div>
+    </form>
+  </section>
+</main>
