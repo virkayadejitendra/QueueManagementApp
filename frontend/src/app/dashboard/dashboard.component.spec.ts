@@ -1,8 +1,8 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
 import { By } from '@angular/platform-browser';
+import { Router, provideRouter } from '@angular/router';
 import { authTokenStorageKey } from '../auth/auth-token-storage';
 import { DashboardComponent } from './dashboard.component';
 
@@ -22,11 +22,11 @@ describe('DashboardComponent', () => {
     TestBed.inject(HttpTestingController).verify();
   });
 
-  it('should render dashboard with side navigation', () => {
+  it('should render dashboard with queue lists', () => {
     const fixture = TestBed.createComponent(DashboardComponent);
     const http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
-    flushQueueStatus(http, false);
+    flushTodayQueue(http, false);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
@@ -35,6 +35,8 @@ describe('DashboardComponent', () => {
     expect(compiled.querySelector('aside nav')?.textContent).toContain('Display screen');
     expect(compiled.querySelector('.sign-out-button')?.textContent).toContain('Sign out');
     expect(compiled.querySelector('.queue-controls')?.textContent).toContain('AB7K2M9Q');
+    expect(compiled.textContent).toContain('Waiting list');
+    expect(compiled.textContent).toContain('Manual walk-in');
   });
 
   it('should clear the auth token and navigate to login when signing out', () => {
@@ -45,7 +47,7 @@ describe('DashboardComponent', () => {
     const router = TestBed.inject(Router);
     const navigateSpy = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
     fixture.detectChanges();
-    flushQueueStatus(http, false);
+    flushTodayQueue(http, false);
 
     fixture.debugElement.query(By.css('.sign-out-button')).triggerEventHandler('click');
 
@@ -53,28 +55,96 @@ describe('DashboardComponent', () => {
     expect(navigateSpy).toHaveBeenCalledWith('/login');
   });
 
-  it('should open the queue from the dashboard controls', () => {
+  it('should open the queue from the dashboard controls and refresh today state', () => {
     const fixture = TestBed.createComponent(DashboardComponent);
     const http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
-    flushQueueStatus(http, false);
+    flushTodayQueue(http, false);
     fixture.detectChanges();
 
     fixture.debugElement.query(By.css('.control-actions button')).triggerEventHandler('click');
 
-    const request = http.expectOne('http://localhost:5020/api/manager/queue/open');
-    expect(request.request.method).toBe('POST');
-    request.flush(createQueueStatus(true));
+    const openRequest = http.expectOne('http://localhost:5020/api/manager/queue/open');
+    expect(openRequest.request.method).toBe('POST');
+    openRequest.flush(createQueueStatus(true));
+
+    flushTodayQueue(http, true);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.status-chip')?.textContent).toContain('Open');
   });
 
-  function flushQueueStatus(http: HttpTestingController, isQueueOpen: boolean): void {
-    const request = http.expectOne('http://localhost:5020/api/manager/queue/status');
+  it('should call next and refresh the current customer', () => {
+    const fixture = TestBed.createComponent(DashboardComponent);
+    const http = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    flushTodayQueue(http, true, { waitingEntries: [createEntry(10, 1, 'Amit Kumar')] });
+    fixture.detectChanges();
+
+    const callNextButton = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'))
+      .find(button => button.textContent?.includes('Call next'));
+    callNextButton?.click();
+
+    const request = http.expectOne('http://localhost:5020/api/manager/queue/call-next');
+    expect(request.request.method).toBe('POST');
+    request.flush(createTodayQueue(true, {
+      currentCalled: createEntry(10, 1, 'Amit Kumar', 'Called')
+    }));
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Token 1');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Amit Kumar');
+  });
+
+  it('should show a conflict message when call next is rejected', () => {
+    const fixture = TestBed.createComponent(DashboardComponent);
+    const http = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    flushTodayQueue(http, true, { waitingEntries: [createEntry(10, 1, 'Amit Kumar')] });
+    fixture.detectChanges();
+
+    const callNextButton = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'))
+      .find(button => button.textContent?.includes('Call next'));
+    callNextButton?.click();
+
+    const request = http.expectOne('http://localhost:5020/api/manager/queue/call-next');
+    request.flush(
+      { status: 409, title: 'Queue state conflict.', detail: 'Another customer is already called for this queue.' },
+      { status: 409, statusText: 'Conflict' });
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Another customer is already called');
+  });
+
+  it('should submit a walk-in customer', () => {
+    const fixture = TestBed.createComponent(DashboardComponent);
+    const http = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    flushTodayQueue(http, true);
+    fixture.detectChanges();
+
+    (fixture.componentInstance as unknown as { walkInForm: { customerName: string } }).walkInForm.customerName = 'Neha Rao';
+    fixture.debugElement.query(By.css('.walk-in-form')).triggerEventHandler('ngSubmit');
+
+    const request = http.expectOne('http://localhost:5020/api/manager/queue/walk-in');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body.customerName).toBe('Neha Rao');
+    request.flush(createTodayQueue(true, {
+      waitingEntries: [createEntry(11, 2, 'Neha Rao')]
+    }));
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Neha Rao');
+  });
+
+  function flushTodayQueue(
+    http: HttpTestingController,
+    isQueueOpen: boolean,
+    overrides: Partial<ReturnType<typeof createTodayQueue>> = {}): void {
+    const request = http.expectOne('http://localhost:5020/api/manager/queue/today');
     expect(request.request.method).toBe('GET');
-    request.flush(createQueueStatus(isQueueOpen));
+    request.flush(createTodayQueue(isQueueOpen, overrides));
   }
 
   function createQueueStatus(isQueueOpen: boolean): object {
@@ -85,6 +155,50 @@ describe('DashboardComponent', () => {
       isQueueOpen,
       waitingCount: 0,
       currentTokenNumber: null
+    };
+  }
+
+  function createTodayQueue(isQueueOpen: boolean, overrides: object = {}): {
+    queueLocationId: number;
+    locationCode: string;
+    businessName: string;
+    isQueueOpen: boolean;
+    waitingCount: number;
+    currentCalled: object | null;
+    waitingEntries: object[];
+    skippedEntries: object[];
+    recentServedEntries: object[];
+  } {
+    const queue = {
+      queueLocationId: 1,
+      locationCode: 'AB7K2M9Q',
+      businessName: 'Priya Dental Clinic',
+      isQueueOpen,
+      waitingCount: 0,
+      currentCalled: null,
+      waitingEntries: [],
+      skippedEntries: [],
+      recentServedEntries: [],
+      ...overrides
+    };
+
+    return {
+      ...queue,
+      waitingCount: queue.waitingEntries.length
+    };
+  }
+
+  function createEntry(queueEntryId: number, tokenNumber: number, customerName: string, status = 'Waiting'): object {
+    return {
+      queueEntryId,
+      tokenNumber,
+      customerName,
+      mobile: null,
+      partySize: null,
+      serviceReason: null,
+      status,
+      callCount: status === 'Called' ? 1 : 0,
+      skipCount: 0
     };
   }
 });

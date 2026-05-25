@@ -212,6 +212,25 @@ paths:
           description: Missing or invalid bearer token.
         '404':
           description: User does not have an assigned queue location.
+  /api/manager/queue/today:
+    get:
+      summary: Get today's manager queue state
+      operationId: getManagerQueueToday
+      tags:
+        - Manager Queue
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Today's queue state for the user's assigned location.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagerQueueTodayResponse'
+        '401':
+          description: Missing or invalid bearer token.
+        '404':
+          description: User does not have an assigned queue location.
   /api/manager/queue/open:
     post:
       summary: Open the authenticated manager queue
@@ -269,6 +288,112 @@ paths:
           description: Missing or invalid bearer token.
         '404':
           description: User does not have an assigned queue location.
+  /api/manager/queue/walk-in:
+    post:
+      summary: Add a manual walk-in customer to today's queue
+      operationId: addManagerWalkIn
+      tags:
+        - Manager Queue
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManagerWalkInRequest'
+      responses:
+        '200':
+          description: Walk-in customer was added and today's queue state is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagerQueueTodayResponse'
+        '400':
+          description: Walk-in request is invalid.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ValidationProblemDetails'
+        '401':
+          description: Missing or invalid bearer token.
+        '404':
+          description: User does not have an assigned queue location.
+        '409':
+          description: Queue is currently closed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/manager/queue/call-next:
+    post:
+      summary: Call the next waiting customer
+      operationId: callNextManagerQueueEntry
+      tags:
+        - Manager Queue
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Next waiting customer was called, or today's state was returned when no one is waiting.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagerQueueTodayResponse'
+        '401':
+          description: Missing or invalid bearer token.
+        '404':
+          description: User does not have an assigned queue location.
+        '409':
+          description: Queue is closed or another customer is already called.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/manager/queue/entries/{queueEntryId}/{action}:
+    post:
+      summary: Update a manager queue entry status
+      operationId: updateManagerQueueEntryStatus
+      tags:
+        - Manager Queue
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: queueEntryId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: action
+          in: path
+          required: true
+          description: One of served, no-response, skipped, restore, or cancel.
+          schema:
+            type: string
+            enum:
+              - served
+              - no-response
+              - skipped
+              - restore
+              - cancel
+      responses:
+        '200':
+          description: Entry was updated and today's queue state is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagerQueueTodayResponse'
+        '401':
+          description: Missing or invalid bearer token.
+        '404':
+          description: Queue entry was not found for today's managed queue.
+        '409':
+          description: Entry is not in a valid status for this action.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
 components:
   securitySchemes:
     bearerAuth:
@@ -503,6 +628,10 @@ components:
           type: string
           enum:
             - Waiting
+            - Called
+            - Served
+            - Skipped
+            - Cancelled
           example: Waiting
         trackingToken:
           type: string
@@ -541,6 +670,157 @@ components:
             - 'null'
           format: int32
           example: 1
+    ManagerWalkInRequest:
+      type: object
+      required:
+        - customerName
+      properties:
+        customerName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Neha Rao
+        mobile:
+          type:
+            - string
+            - 'null'
+          maxLength: 30
+          example: '9876543210'
+        partySize:
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+          maximum: 50
+          example: 2
+        serviceReason:
+          type:
+            - string
+            - 'null'
+          maxLength: 200
+          example: Consultation
+    ManagerQueueTodayResponse:
+      type: object
+      required:
+        - queueLocationId
+        - locationCode
+        - businessName
+        - isQueueOpen
+        - waitingCount
+        - waitingEntries
+        - skippedEntries
+        - recentServedEntries
+      properties:
+        queueLocationId:
+          type: integer
+          format: int32
+          example: 1
+        locationCode:
+          type: string
+          example: AB7K2M9Q
+        businessName:
+          type: string
+          example: Priya Dental Clinic
+        isQueueOpen:
+          type: boolean
+          example: true
+        waitingCount:
+          type: integer
+          format: int32
+          example: 3
+        currentCalled:
+          oneOf:
+            - $ref: '#/components/schemas/ManagerQueueEntryResponse'
+            - type: 'null'
+        waitingEntries:
+          type: array
+          items:
+            $ref: '#/components/schemas/ManagerQueueEntryResponse'
+        skippedEntries:
+          type: array
+          items:
+            $ref: '#/components/schemas/ManagerQueueEntryResponse'
+        recentServedEntries:
+          type: array
+          items:
+            $ref: '#/components/schemas/ManagerQueueEntryResponse'
+    ManagerQueueEntryResponse:
+      type: object
+      required:
+        - queueEntryId
+        - tokenNumber
+        - customerName
+        - status
+        - callCount
+        - skipCount
+        - createdAt
+      properties:
+        queueEntryId:
+          type: integer
+          format: int32
+          example: 10
+        tokenNumber:
+          type: integer
+          format: int32
+          example: 4
+        customerName:
+          type: string
+          example: Amit Kumar
+        mobile:
+          type:
+            - string
+            - 'null'
+          example: '9876543210'
+        partySize:
+          type:
+            - integer
+            - 'null'
+          example: 2
+        serviceReason:
+          type:
+            - string
+            - 'null'
+          example: Consultation
+        status:
+          type: string
+          enum:
+            - Waiting
+            - Called
+            - Served
+            - Skipped
+            - Cancelled
+          example: Waiting
+        callCount:
+          type: integer
+          format: int32
+          example: 1
+        skipCount:
+          type: integer
+          format: int32
+          example: 0
+        createdAt:
+          type: string
+          format: date-time
+        calledAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        servedAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        cancelledAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        lastSkippedAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
     ValidationProblemDetails:
       type: object
       properties:

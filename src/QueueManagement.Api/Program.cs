@@ -1,4 +1,5 @@
 using System.Text;
+using System.Data;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -37,6 +38,7 @@ builder.Services.AddScoped<IOwnerRegistrationRepository, OwnerRegistrationReposi
 builder.Services.AddSingleton<ILocationCodeGenerator, LocationCodeGenerator>();
 builder.Services.AddScoped<IValidator<CustomerJoinQueueRequest>, CustomerJoinQueueRequestValidator>();
 builder.Services.AddScoped<IValidator<LoginRequest>, LoginRequestValidator>();
+builder.Services.AddScoped<IValidator<ManagerWalkInRequest>, ManagerWalkInRequestValidator>();
 builder.Services.AddScoped<IValidator<OwnerRegistrationRequest>, OwnerRegistrationRequestValidator>();
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -95,7 +97,14 @@ using (var scope = app.Services.CreateScope())
             "TokenNumber" INTEGER NOT NULL,
             "TrackingToken" TEXT NOT NULL,
             "Status" TEXT NOT NULL,
+            "CallCount" INTEGER NOT NULL DEFAULT 0,
+            "SkipCount" INTEGER NOT NULL DEFAULT 0,
+            "SortOrder" INTEGER NOT NULL DEFAULT 0,
             "CreatedAt" TEXT NOT NULL,
+            "CalledAt" TEXT NULL,
+            "ServedAt" TEXT NULL,
+            "CancelledAt" TEXT NULL,
+            "LastSkippedAt" TEXT NULL,
             CONSTRAINT "FK_QueueEntries_QueueLocations_QueueLocationId"
                 FOREIGN KEY ("QueueLocationId") REFERENCES "QueueLocations" ("Id") ON DELETE CASCADE
         );
@@ -108,6 +117,43 @@ using (var scope = app.Services.CreateScope())
         CREATE UNIQUE INDEX IF NOT EXISTS "IX_QueueEntries_TrackingToken"
         ON "QueueEntries" ("TrackingToken");
         """);
+    dbContext.Database.ExecuteSqlRaw("""
+        CREATE INDEX IF NOT EXISTS "IX_QueueEntries_QueueLocationId_BusinessDate_Status"
+        ON "QueueEntries" ("QueueLocationId", "BusinessDate", "Status");
+        """);
+
+    var connection = dbContext.Database.GetDbConnection();
+    if (connection.State != ConnectionState.Open)
+    {
+        connection.Open();
+    }
+    using var command = connection.CreateCommand();
+    command.CommandText = "PRAGMA table_info('QueueEntries');";
+    var existingColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    using (var reader = command.ExecuteReader())
+    {
+        while (reader.Read())
+        {
+            existingColumns.Add(reader.GetString(1));
+        }
+    }
+
+    foreach (var migrationSql in new Dictionary<string, string>
+    {
+        ["CallCount"] = """ALTER TABLE "QueueEntries" ADD COLUMN "CallCount" INTEGER NOT NULL DEFAULT 0;""",
+        ["SkipCount"] = """ALTER TABLE "QueueEntries" ADD COLUMN "SkipCount" INTEGER NOT NULL DEFAULT 0;""",
+        ["SortOrder"] = """ALTER TABLE "QueueEntries" ADD COLUMN "SortOrder" INTEGER NOT NULL DEFAULT 0;""",
+        ["CalledAt"] = """ALTER TABLE "QueueEntries" ADD COLUMN "CalledAt" TEXT NULL;""",
+        ["ServedAt"] = """ALTER TABLE "QueueEntries" ADD COLUMN "ServedAt" TEXT NULL;""",
+        ["CancelledAt"] = """ALTER TABLE "QueueEntries" ADD COLUMN "CancelledAt" TEXT NULL;""",
+        ["LastSkippedAt"] = """ALTER TABLE "QueueEntries" ADD COLUMN "LastSkippedAt" TEXT NULL;"""
+    })
+    {
+        if (!existingColumns.Contains(migrationSql.Key))
+        {
+            dbContext.Database.ExecuteSqlRaw(migrationSql.Value);
+        }
+    }
 }
 
 // Configure the HTTP request pipeline.

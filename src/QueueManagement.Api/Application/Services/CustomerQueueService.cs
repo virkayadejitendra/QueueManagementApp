@@ -49,7 +49,8 @@ public sealed class CustomerQueueService(
             BusinessDate = businessDate,
             TokenNumber = tokenNumber,
             TrackingToken = await CreateUniqueTrackingTokenAsync(cancellationToken),
-            Status = QueueEntryStatuses.Waiting
+            Status = QueueEntryStatuses.Waiting,
+            SortOrder = tokenNumber
         };
 
         await repository.AddQueueEntryAsync(queueEntry, cancellationToken);

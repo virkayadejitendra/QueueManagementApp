@@ -49,6 +49,103 @@ public sealed class ManagerQueueRepository(AppDbContext dbContext) : IManagerQue
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public Task<int?> GetCurrentCalledTokenAsync(
+        int queueLocationId,
+        DateOnly businessDate,
+        CancellationToken cancellationToken)
+    {
+        return dbContext.QueueEntries
+            .Where(queueEntry =>
+                queueEntry.QueueLocationId == queueLocationId
+                && queueEntry.BusinessDate == businessDate
+                && queueEntry.Status == QueueEntryStatuses.Called)
+            .OrderBy(queueEntry => queueEntry.SortOrder)
+            .ThenBy(queueEntry => queueEntry.TokenNumber)
+            .Select(queueEntry => (int?)queueEntry.TokenNumber)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<QueueEntry>> GetEntriesForBusinessDateAsync(
+        int queueLocationId,
+        DateOnly businessDate,
+        CancellationToken cancellationToken)
+    {
+        return await dbContext.QueueEntries
+            .Where(queueEntry =>
+                queueEntry.QueueLocationId == queueLocationId
+                && queueEntry.BusinessDate == businessDate)
+            .OrderBy(queueEntry => queueEntry.SortOrder)
+            .ThenBy(queueEntry => queueEntry.TokenNumber)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> GetLastTokenNumberAsync(
+        int queueLocationId,
+        DateOnly businessDate,
+        CancellationToken cancellationToken)
+    {
+        return await dbContext.QueueEntries
+            .Where(queueEntry =>
+                queueEntry.QueueLocationId == queueLocationId
+                && queueEntry.BusinessDate == businessDate)
+            .MaxAsync(queueEntry => (int?)queueEntry.TokenNumber, cancellationToken)
+            ?? 0;
+    }
+
+    public Task<bool> TrackingTokenExistsAsync(
+        string trackingToken,
+        CancellationToken cancellationToken)
+    {
+        return dbContext.QueueEntries.AnyAsync(
+            queueEntry => queueEntry.TrackingToken == trackingToken,
+            cancellationToken);
+    }
+
+    public Task<bool> HasCalledEntryAsync(
+        int queueLocationId,
+        DateOnly businessDate,
+        CancellationToken cancellationToken)
+    {
+        return dbContext.QueueEntries.AnyAsync(
+            queueEntry =>
+                queueEntry.QueueLocationId == queueLocationId
+                && queueEntry.BusinessDate == businessDate
+                && queueEntry.Status == QueueEntryStatuses.Called,
+            cancellationToken);
+    }
+
+    public Task<QueueEntry?> FindNextWaitingEntryAsync(
+        int queueLocationId,
+        DateOnly businessDate,
+        CancellationToken cancellationToken)
+    {
+        return dbContext.QueueEntries
+            .Where(queueEntry =>
+                queueEntry.QueueLocationId == queueLocationId
+                && queueEntry.BusinessDate == businessDate
+                && queueEntry.Status == QueueEntryStatuses.Waiting)
+            .OrderBy(queueEntry => queueEntry.SortOrder)
+            .ThenBy(queueEntry => queueEntry.TokenNumber)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<QueueEntry?> FindEntryAsync(
+        int queueLocationId,
+        int queueEntryId,
+        CancellationToken cancellationToken)
+    {
+        return dbContext.QueueEntries.SingleOrDefaultAsync(
+            queueEntry =>
+                queueEntry.QueueLocationId == queueLocationId
+                && queueEntry.Id == queueEntryId,
+            cancellationToken);
+    }
+
+    public void AddQueueEntry(QueueEntry queueEntry)
+    {
+        dbContext.QueueEntries.Add(queueEntry);
+    }
+
     public async Task SaveChangesAsync(CancellationToken cancellationToken)
     {
         await dbContext.SaveChangesAsync(cancellationToken);

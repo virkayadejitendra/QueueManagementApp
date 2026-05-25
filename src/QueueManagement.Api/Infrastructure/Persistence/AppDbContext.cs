@@ -54,6 +54,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             {
                 queueEntry.QueueLocationId,
                 queueEntry.BusinessDate,
+                queueEntry.Status
+            });
+            entity.HasIndex(queueEntry => new
+            {
+                queueEntry.QueueLocationId,
+                queueEntry.BusinessDate,
                 queueEntry.TokenNumber
             }).IsUnique();
             entity.HasIndex(queueEntry => queueEntry.TrackingToken).IsUnique();

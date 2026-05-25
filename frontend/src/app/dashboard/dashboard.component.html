@@ -31,33 +31,33 @@
         <p class="eyebrow">Manager queue</p>
         <h2 id="dashboard-title">Dashboard</h2>
       </div>
-      <span class="status-chip">{{ queueStatus()?.isQueueOpen ? 'Open' : 'Closed' }}</span>
+      <span class="status-chip">{{ queueToday()?.isQueueOpen ? 'Open' : 'Closed' }}</span>
     </header>
 
     <div class="dashboard-grid">
       <article class="summary-tile">
         <span>Queue status</span>
-        <strong>{{ queueStatus()?.isQueueOpen ? 'Open' : 'Closed' }}</strong>
+        <strong>{{ queueToday()?.isQueueOpen ? 'Open' : 'Closed' }}</strong>
       </article>
 
       <article class="summary-tile">
         <span>Waiting</span>
-        <strong>{{ queueStatus()?.waitingCount ?? 0 }}</strong>
+        <strong>{{ queueToday()?.waitingCount ?? 0 }}</strong>
       </article>
 
       <article class="summary-tile">
         <span>Current token</span>
-        <strong>{{ queueStatus()?.currentTokenNumber ?? '-' }}</strong>
+        <strong>{{ queueToday()?.currentCalled?.tokenNumber ?? '-' }}</strong>
       </article>
     </div>
 
     <section class="queue-controls" aria-labelledby="queue-controls-title">
       <div>
-        <h3 id="queue-controls-title">{{ queueStatus()?.businessName ?? 'Queue location' }}</h3>
-        @if (queueStatus(); as status) {
+        <h3 id="queue-controls-title">{{ queueToday()?.businessName ?? 'Queue location' }}</h3>
+        @if (queueToday(); as today) {
           <p>
             Public join link:
-            <a [routerLink]="joinUrl">{{ status.locationCode }}</a>
+            <a [routerLink]="joinUrl">{{ today.locationCode }}</a>
           </p>
         } @else {
           <p>Load your assigned queue location to manage customer joining.</p>
@@ -69,15 +69,141 @@
       }
 
       <div class="control-actions">
-        <button type="button" (click)="openQueue()" [disabled]="isLoadingQueue() || queueStatus()?.isQueueOpen">
+        <button type="button" (click)="openQueue()" [disabled]="isLoadingQueue() || queueToday()?.isQueueOpen">
           Open queue
         </button>
-        <button type="button" class="secondary-button" (click)="closeQueue()" [disabled]="isLoadingQueue() || !queueStatus()?.isQueueOpen">
+        <button type="button" class="secondary-button" (click)="closeQueue()" [disabled]="isLoadingQueue() || !queueToday()?.isQueueOpen">
           Close queue
         </button>
-        <button type="button" class="danger-button" (click)="resetQueue()" [disabled]="isLoadingQueue()">
-          Reset queue
+        <button type="button" (click)="callNext()" [disabled]="isLoadingQueue() || !queueToday()?.isQueueOpen || !!queueToday()?.currentCalled || !queueToday()?.waitingCount">
+          Call next
         </button>
+      </div>
+    </section>
+
+    <section class="current-customer" aria-labelledby="current-customer-title">
+      <div class="section-heading">
+        <h3 id="current-customer-title">Current called customer</h3>
+      </div>
+
+      @if (queueToday()?.currentCalled; as current) {
+        <article class="entry-card called">
+          <div>
+            <strong>Token {{ current.tokenNumber }}</strong>
+            <span>{{ current.customerName }}</span>
+            @if (current.serviceReason) {
+              <small>{{ current.serviceReason }}</small>
+            }
+          </div>
+          <div class="entry-actions">
+            <button type="button" (click)="markServed(current)" [disabled]="isLoadingQueue()">Served</button>
+            <button type="button" class="secondary-button" (click)="markNoResponse(current)" [disabled]="isLoadingQueue()">No response</button>
+            <button type="button" class="secondary-button" (click)="markSkipped(current)" [disabled]="isLoadingQueue()">Skip</button>
+            <button type="button" class="danger-button" (click)="cancel(current)" [disabled]="isLoadingQueue()">Cancel</button>
+          </div>
+        </article>
+      } @else {
+        <p class="empty-state">No customer is currently called.</p>
+      }
+    </section>
+
+    <section class="walk-in-panel" aria-labelledby="walk-in-title">
+      <div class="section-heading">
+        <h3 id="walk-in-title">Manual walk-in</h3>
+      </div>
+
+      <form class="walk-in-form" (ngSubmit)="addWalkIn()">
+        <label>
+          Customer name
+          <input name="customerName" [(ngModel)]="walkInForm.customerName" maxlength="100" required />
+        </label>
+
+        <label>
+          Mobile
+          <input name="mobile" [(ngModel)]="walkInForm.mobile" maxlength="30" />
+        </label>
+
+        <label>
+          Party size
+          <input name="partySize" type="number" min="1" max="50" [(ngModel)]="walkInForm.partySize" />
+        </label>
+
+        <label>
+          Reason
+          <input name="serviceReason" [(ngModel)]="walkInForm.serviceReason" maxlength="200" />
+        </label>
+
+        <button type="submit" [disabled]="isLoadingQueue() || isSavingWalkIn() || !queueToday()?.isQueueOpen">
+          Add walk-in
+        </button>
+      </form>
+    </section>
+
+    <section class="queue-lists" aria-label="Today queue lists">
+      <div class="queue-list">
+        <div class="section-heading">
+          <h3>Waiting list</h3>
+          <span>{{ queueToday()?.waitingEntries?.length ?? 0 }}</span>
+        </div>
+
+        @for (entry of queueToday()?.waitingEntries ?? []; track entry.queueEntryId) {
+          <article class="entry-row">
+            <div>
+              <strong>Token {{ entry.tokenNumber }}</strong>
+              <span>{{ entry.customerName }}</span>
+              @if (entry.partySize) {
+                <small>Party {{ entry.partySize }}</small>
+              }
+            </div>
+            <div class="entry-actions">
+              <button type="button" class="secondary-button" (click)="markSkipped(entry)" [disabled]="isLoadingQueue()">Skip</button>
+              <button type="button" class="danger-button" (click)="cancel(entry)" [disabled]="isLoadingQueue()">Cancel</button>
+            </div>
+          </article>
+        } @empty {
+          <p class="empty-state">No waiting customers.</p>
+        }
+      </div>
+
+      <div class="queue-list">
+        <div class="section-heading">
+          <h3>Skipped list</h3>
+          <span>{{ queueToday()?.skippedEntries?.length ?? 0 }}</span>
+        </div>
+
+        @for (entry of queueToday()?.skippedEntries ?? []; track entry.queueEntryId) {
+          <article class="entry-row">
+            <div>
+              <strong>Token {{ entry.tokenNumber }}</strong>
+              <span>{{ entry.customerName }}</span>
+              <small>Skipped {{ entry.skipCount }} time{{ entry.skipCount === 1 ? '' : 's' }}</small>
+            </div>
+            <div class="entry-actions">
+              <button type="button" (click)="restore(entry)" [disabled]="isLoadingQueue()">Restore</button>
+              <button type="button" class="danger-button" (click)="cancel(entry)" [disabled]="isLoadingQueue()">Cancel</button>
+            </div>
+          </article>
+        } @empty {
+          <p class="empty-state">No skipped customers.</p>
+        }
+      </div>
+
+      <div class="queue-list">
+        <div class="section-heading">
+          <h3>Recent served</h3>
+          <span>{{ queueToday()?.recentServedEntries?.length ?? 0 }}</span>
+        </div>
+
+        @for (entry of queueToday()?.recentServedEntries ?? []; track entry.queueEntryId) {
+          <article class="entry-row compact">
+            <div>
+              <strong>Token {{ entry.tokenNumber }}</strong>
+              <span>{{ entry.customerName }}</span>
+            </div>
+          </article>
+        } @empty {
+          <p class="empty-state">No served customers yet.</p>
+        }
       </div>
     </section>
   </section>

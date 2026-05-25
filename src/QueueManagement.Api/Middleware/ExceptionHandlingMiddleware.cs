@@ -63,6 +63,31 @@ public sealed class ExceptionHandlingMiddleware(
 
             await context.Response.WriteAsJsonAsync(problem, context.RequestAborted);
         }
+        catch (QueueConflictException exception)
+        {
+            logger.LogInformation(
+                exception,
+                "Queue state conflict while processing {Method} {Path}.",
+                context.Request.Method,
+                context.Request.Path);
+
+            if (context.Response.HasStarted)
+            {
+                throw;
+            }
+
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/problem+json";
+
+            var problem = new ProblemDetails
+            {
+                Status = StatusCodes.Status409Conflict,
+                Title = "Queue state conflict.",
+                Detail = exception.Message
+            };
+
+            await context.Response.WriteAsJsonAsync(problem, context.RequestAborted);
+        }
         catch (ManagedQueueNotFoundException exception)
         {
             logger.LogInformation(
@@ -83,6 +108,31 @@ public sealed class ExceptionHandlingMiddleware(
             {
                 Status = StatusCodes.Status404NotFound,
                 Title = "Queue location not found.",
+                Detail = exception.Message
+            };
+
+            await context.Response.WriteAsJsonAsync(problem, context.RequestAborted);
+        }
+        catch (QueueEntryNotFoundException exception)
+        {
+            logger.LogInformation(
+                exception,
+                "Queue entry was not found while processing {Method} {Path}.",
+                context.Request.Method,
+                context.Request.Path);
+
+            if (context.Response.HasStarted)
+            {
+                throw;
+            }
+
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            context.Response.ContentType = "application/problem+json";
+
+            var problem = new ProblemDetails
+            {
+                Status = StatusCodes.Status404NotFound,
+                Title = "Queue entry not found.",
                 Detail = exception.Message
             };
 

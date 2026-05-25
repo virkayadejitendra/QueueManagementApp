@@ -115,7 +115,10 @@ h2 {
 }
 
 .summary-tile,
-.queue-controls {
+.queue-controls,
+.current-customer,
+.walk-in-panel,
+.queue-list {
   border: 1px solid #d9ded8;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.86);
@@ -137,7 +140,10 @@ h2 {
   overflow-wrap: anywhere;
 }
 
-.queue-controls {
+.queue-controls,
+.current-customer,
+.walk-in-panel,
+.queue-list {
   display: grid;
   gap: 16px;
 }
@@ -157,6 +163,103 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.section-heading span {
+  min-width: 32px;
+  border-radius: 999px;
+  background: #eef7f4;
+  color: #124c59;
+  font-weight: 800;
+  text-align: center;
+  padding: 4px 8px;
+}
+
+.entry-card,
+.entry-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  border: 1px solid #d9ded8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.entry-card.called {
+  border-color: #1f6270;
+  background: #eef7f4;
+}
+
+.entry-card div:first-child,
+.entry-row div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.entry-card strong,
+.entry-row strong {
+  color: #18211f;
+}
+
+.entry-card span,
+.entry-row span,
+.entry-card small,
+.entry-row small {
+  min-width: 0;
+  color: #58635f;
+  overflow-wrap: anywhere;
+}
+
+.entry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.walk-in-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.walk-in-form label {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  color: #58635f;
+  font-weight: 800;
+}
+
+.walk-in-form input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.queue-lists {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.empty-state {
+  border-radius: 8px;
+  background: #f5f7f6;
+  color: #58635f;
+  margin: 0;
+  padding: 16px;
 }
 
 .secondary-button {
@@ -223,12 +326,29 @@ h2 {
   }
 
   .summary-tile,
-  .queue-controls {
+  .queue-controls,
+  .current-customer,
+  .walk-in-panel,
+  .queue-list {
     padding: 16px;
   }
 
-  .control-actions button {
+  .control-actions button,
+  .entry-actions button,
+  .walk-in-form button {
     width: 100%;
     min-width: 0;
+  }
+
+  .entry-card,
+  .entry-row {
+    display: grid;
+  }
+}
+
+@media (max-width: 1040px) {
+  .walk-in-form,
+  .queue-lists {
+    grid-template-columns: 1fr;
   }
 }
