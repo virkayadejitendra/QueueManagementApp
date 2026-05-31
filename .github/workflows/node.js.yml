@@ -65,6 +65,9 @@ jobs:
     - name: Build for production
       run: npm run build:prod -- --base-href /QueueManagementApp/
       working-directory: frontend
+    - name: Add GitHub Pages SPA fallback
+      run: cp dist/frontend/browser/index.html dist/frontend/browser/404.html
+      working-directory: frontend
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
       with:
