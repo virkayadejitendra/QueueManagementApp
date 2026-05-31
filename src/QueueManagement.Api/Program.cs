@@ -68,8 +68,26 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
     {
+        var configuredOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .GetChildren()
+            .Select(origin => origin.Value)
+            .Where(origin => !string.IsNullOrWhiteSpace(origin))
+            .Cast<string>()
+            .ToArray();
+
+        var developmentOrigins = builder.Environment.IsDevelopment()
+            ? ["http://localhost:4200", "https://localhost:4200"]
+            : Array.Empty<string>();
+
+        var allowedOrigins = configuredOrigins
+            .Concat(developmentOrigins)
+            .DefaultIfEmpty("http://localhost:4200")
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
         policy
-            .WithOrigins("http://localhost:4200", "https://localhost:4200")
+            .WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
