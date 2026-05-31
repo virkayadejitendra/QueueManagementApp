@@ -92,9 +92,21 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod();
     });
 });
-builder.Services.AddSqlite<AppDbContext>(
-    builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Data Source=queue-management.db");
+var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? "Data Source=queue-management.db";
+var usePostgres = IsPostgresConnectionString(defaultConnection);
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    if (usePostgres)
+    {
+        options.UseNpgsql(NormalizePostgresConnectionString(defaultConnection));
+    }
+    else
+    {
+        options.UseSqlite(defaultConnection);
+    }
+});
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
@@ -103,73 +115,78 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     dbContext.Database.EnsureCreated();
-    dbContext.Database.ExecuteSqlRaw("""
-        CREATE TABLE IF NOT EXISTS "QueueEntries" (
-            "Id" INTEGER NOT NULL CONSTRAINT "PK_QueueEntries" PRIMARY KEY AUTOINCREMENT,
-            "QueueLocationId" INTEGER NOT NULL,
-            "CustomerName" TEXT NOT NULL,
-            "Mobile" TEXT NULL,
-            "PartySize" INTEGER NULL,
-            "ServiceReason" TEXT NULL,
-            "BusinessDate" TEXT NOT NULL,
-            "TokenNumber" INTEGER NOT NULL,
-            "TrackingToken" TEXT NOT NULL,
-            "Status" TEXT NOT NULL,
-            "CallCount" INTEGER NOT NULL DEFAULT 0,
-            "SkipCount" INTEGER NOT NULL DEFAULT 0,
-            "SortOrder" INTEGER NOT NULL DEFAULT 0,
-            "CreatedAt" TEXT NOT NULL,
-            "CalledAt" TEXT NULL,
-            "ServedAt" TEXT NULL,
-            "CancelledAt" TEXT NULL,
-            "LastSkippedAt" TEXT NULL,
-            CONSTRAINT "FK_QueueEntries_QueueLocations_QueueLocationId"
-                FOREIGN KEY ("QueueLocationId") REFERENCES "QueueLocations" ("Id") ON DELETE CASCADE
-        );
-        """);
-    dbContext.Database.ExecuteSqlRaw("""
-        CREATE UNIQUE INDEX IF NOT EXISTS "IX_QueueEntries_QueueLocationId_BusinessDate_TokenNumber"
-        ON "QueueEntries" ("QueueLocationId", "BusinessDate", "TokenNumber");
-        """);
-    dbContext.Database.ExecuteSqlRaw("""
-        CREATE UNIQUE INDEX IF NOT EXISTS "IX_QueueEntries_TrackingToken"
-        ON "QueueEntries" ("TrackingToken");
-        """);
-    dbContext.Database.ExecuteSqlRaw("""
-        CREATE INDEX IF NOT EXISTS "IX_QueueEntries_QueueLocationId_BusinessDate_Status"
-        ON "QueueEntries" ("QueueLocationId", "BusinessDate", "Status");
-        """);
 
-    var connection = dbContext.Database.GetDbConnection();
-    if (connection.State != ConnectionState.Open)
+    if (dbContext.Database.IsSqlite())
     {
-        connection.Open();
-    }
-    using var command = connection.CreateCommand();
-    command.CommandText = "PRAGMA table_info('QueueEntries');";
-    var existingColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-    using (var reader = command.ExecuteReader())
-    {
-        while (reader.Read())
+        dbContext.Database.ExecuteSqlRaw("""
+            CREATE TABLE IF NOT EXISTS "QueueEntries" (
+                "Id" INTEGER NOT NULL CONSTRAINT "PK_QueueEntries" PRIMARY KEY AUTOINCREMENT,
+                "QueueLocationId" INTEGER NOT NULL,
+                "CustomerName" TEXT NOT NULL,
+                "Mobile" TEXT NULL,
+                "PartySize" INTEGER NULL,
+                "ServiceReason" TEXT NULL,
+                "BusinessDate" TEXT NOT NULL,
+                "TokenNumber" INTEGER NOT NULL,
+                "TrackingToken" TEXT NOT NULL,
+                "Status" TEXT NOT NULL,
+                "CallCount" INTEGER NOT NULL DEFAULT 0,
+                "SkipCount" INTEGER NOT NULL DEFAULT 0,
+                "SortOrder" INTEGER NOT NULL DEFAULT 0,
+                "CreatedAt" TEXT NOT NULL,
+                "CalledAt" TEXT NULL,
+                "ServedAt" TEXT NULL,
+                "CancelledAt" TEXT NULL,
+                "LastSkippedAt" TEXT NULL,
+                CONSTRAINT "FK_QueueEntries_QueueLocations_QueueLocationId"
+                    FOREIGN KEY ("QueueLocationId") REFERENCES "QueueLocations" ("Id") ON DELETE CASCADE
+            );
+            """);
+        dbContext.Database.ExecuteSqlRaw("""
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_QueueEntries_QueueLocationId_BusinessDate_TokenNumber"
+            ON "QueueEntries" ("QueueLocationId", "BusinessDate", "TokenNumber");
+            """);
+        dbContext.Database.ExecuteSqlRaw("""
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_QueueEntries_TrackingToken"
+            ON "QueueEntries" ("TrackingToken");
+            """);
+        dbContext.Database.ExecuteSqlRaw("""
+            CREATE INDEX IF NOT EXISTS "IX_QueueEntries_QueueLocationId_BusinessDate_Status"
+            ON "QueueEntries" ("QueueLocationId", "BusinessDate", "Status");
+            """);
+
+        var connection = dbContext.Database.GetDbConnection();
+        if (connection.State != ConnectionState.Open)
         {
-            existingColumns.Add(reader.GetString(1));
+            connection.Open();
         }
-    }
 
-    foreach (var migrationSql in new Dictionary<string, string>
-    {
-        ["CallCount"] = """ALTER TABLE "QueueEntries" ADD COLUMN "CallCount" INTEGER NOT NULL DEFAULT 0;""",
-        ["SkipCount"] = """ALTER TABLE "QueueEntries" ADD COLUMN "SkipCount" INTEGER NOT NULL DEFAULT 0;""",
-        ["SortOrder"] = """ALTER TABLE "QueueEntries" ADD COLUMN "SortOrder" INTEGER NOT NULL DEFAULT 0;""",
-        ["CalledAt"] = """ALTER TABLE "QueueEntries" ADD COLUMN "CalledAt" TEXT NULL;""",
-        ["ServedAt"] = """ALTER TABLE "QueueEntries" ADD COLUMN "ServedAt" TEXT NULL;""",
-        ["CancelledAt"] = """ALTER TABLE "QueueEntries" ADD COLUMN "CancelledAt" TEXT NULL;""",
-        ["LastSkippedAt"] = """ALTER TABLE "QueueEntries" ADD COLUMN "LastSkippedAt" TEXT NULL;"""
-    })
-    {
-        if (!existingColumns.Contains(migrationSql.Key))
+        using var command = connection.CreateCommand();
+        command.CommandText = "PRAGMA table_info('QueueEntries');";
+        var existingColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using (var reader = command.ExecuteReader())
         {
-            dbContext.Database.ExecuteSqlRaw(migrationSql.Value);
+            while (reader.Read())
+            {
+                existingColumns.Add(reader.GetString(1));
+            }
+        }
+
+        foreach (var migrationSql in new Dictionary<string, string>
+        {
+            ["CallCount"] = """ALTER TABLE "QueueEntries" ADD COLUMN "CallCount" INTEGER NOT NULL DEFAULT 0;""",
+            ["SkipCount"] = """ALTER TABLE "QueueEntries" ADD COLUMN "SkipCount" INTEGER NOT NULL DEFAULT 0;""",
+            ["SortOrder"] = """ALTER TABLE "QueueEntries" ADD COLUMN "SortOrder" INTEGER NOT NULL DEFAULT 0;""",
+            ["CalledAt"] = """ALTER TABLE "QueueEntries" ADD COLUMN "CalledAt" TEXT NULL;""",
+            ["ServedAt"] = """ALTER TABLE "QueueEntries" ADD COLUMN "ServedAt" TEXT NULL;""",
+            ["CancelledAt"] = """ALTER TABLE "QueueEntries" ADD COLUMN "CancelledAt" TEXT NULL;""",
+            ["LastSkippedAt"] = """ALTER TABLE "QueueEntries" ADD COLUMN "LastSkippedAt" TEXT NULL;"""
+        })
+        {
+            if (!existingColumns.Contains(migrationSql.Key))
+            {
+                dbContext.Database.ExecuteSqlRaw(migrationSql.Value);
+            }
         }
     }
 }
@@ -188,5 +205,47 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+static bool IsPostgresConnectionString(string connectionString)
+{
+    return connectionString.StartsWith("Host=", StringComparison.OrdinalIgnoreCase)
+        || connectionString.StartsWith("Server=", StringComparison.OrdinalIgnoreCase)
+        || connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase)
+        || connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase);
+}
+
+static string NormalizePostgresConnectionString(string connectionString)
+{
+    if (!connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase)
+        && !connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+    {
+        return connectionString;
+    }
+
+    var uri = new Uri(connectionString);
+    var userInfo = uri.UserInfo.Split(':', 2);
+    var builder = new Npgsql.NpgsqlConnectionStringBuilder
+    {
+        Host = uri.Host,
+        Port = uri.Port > 0 ? uri.Port : 5432,
+        Database = uri.AbsolutePath.TrimStart('/'),
+        Username = Uri.UnescapeDataString(userInfo[0]),
+        Password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty
+    };
+
+    var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+    var sslMode = query["sslmode"] ?? query["sslMode"];
+    if (!string.IsNullOrWhiteSpace(sslMode)
+        && Enum.TryParse<Npgsql.SslMode>(sslMode, ignoreCase: true, out var parsedSslMode))
+    {
+        builder.SslMode = parsedSslMode;
+    }
+    else
+    {
+        builder.SslMode = Npgsql.SslMode.Require;
+    }
+
+    return builder.ConnectionString;
+}
 
 public partial class Program;

@@ -5,7 +5,7 @@ This document records how the Queue Management App was deployed with:
 - Angular frontend on GitHub Pages
 - ASP.NET Core API on Render
 - Docker-based backend deployment
-- Current SQLite storage, with a recommendation to move to PostgreSQL for persistence
+- PostgreSQL for hosted persistent storage
 
 ## Current Live URLs
 
@@ -66,12 +66,17 @@ Required:
 
 ```text
 ASPNETCORE_ENVIRONMENT=Production
+ConnectionStrings__DefaultConnection=<PostgreSQL connection string>
 Jwt__Issuer=QueueManagement.Api
 Jwt__Audience=QueueManagement.Frontend
 Jwt__SigningKey=<long-random-production-secret>
 Jwt__ExpiresMinutes=60
 Cors__AllowedOrigins__0=https://virkayadejitendra.github.io
 ```
+
+The backend still supports the local SQLite connection from `appsettings.json`,
+but Render should use a managed PostgreSQL database so data survives redeploys
+and container restarts.
 
 Important CORS note:
 
@@ -233,32 +238,46 @@ If this header is missing:
 - Redeploy the Render service.
 - Use "Clear build cache & deploy" if needed.
 
-## Current Database Limitation
+## Database
 
-The API currently uses SQLite:
+Local development defaults to SQLite:
 
 ```text
 Data Source=queue-management.db
 ```
 
-On Render free Web Services, the local filesystem is ephemeral. This means the SQLite database file can be reset or lost when:
+Render production should use PostgreSQL through:
+
+```text
+ConnectionStrings__DefaultConnection=<PostgreSQL connection string>
+```
+
+The API accepts either standard Npgsql format:
+
+```text
+Host=<host>;Database=<database>;Username=<user>;Password=<password>;SSL Mode=Require
+```
+
+or a provider URL format:
+
+```text
+postgresql://<user>:<password>@<host>/<database>?sslmode=require
+```
+
+On Render free Web Services, the local filesystem is ephemeral. Do not use the
+SQLite file for production because it can be reset or lost when:
 
 - The service redeploys
 - The container restarts
 - Render replaces the instance
 - The free instance spins down and starts again
 
-This is acceptable only for temporary demos.
+## Free PostgreSQL Setup
 
-## Recommended Persistent Database
+Use a free managed PostgreSQL provider such as Neon, then copy the database
+connection string into Render.
 
-For a persistent MVP database, use:
-
-```text
-Neon PostgreSQL
-```
-
-Recommended future architecture:
+Architecture:
 
 ```text
 GitHub Pages Angular
@@ -267,19 +286,12 @@ GitHub Pages Angular
 Render ASP.NET Core API
         |
         v
-Neon PostgreSQL
+Managed PostgreSQL
 ```
 
-Required future backend changes:
-
-- Replace `Microsoft.EntityFrameworkCore.Sqlite`
-- Add `Npgsql.EntityFrameworkCore.PostgreSQL`
-- Change `AddSqlite` to `UseNpgsql`
-- Set Render environment variable:
-
-```text
-ConnectionStrings__DefaultConnection=<Neon PostgreSQL connection string>
-```
+After setting `ConnectionStrings__DefaultConnection`, redeploy the Render
+service. The API creates the schema automatically on first startup when the
+PostgreSQL database is empty.
 
 ## Common Issues
 
@@ -315,8 +327,10 @@ The API requires a JWT signing key in production.
 
 ### Data Disappears After Deploy
 
-This is expected with SQLite on Render free hosting.
+This means Render is still using the local SQLite fallback.
 
 Fix:
 
-Move to Neon PostgreSQL or another external managed database.
+- Confirm `ConnectionStrings__DefaultConnection` is set in Render.
+- Confirm the value starts with `Host=`, `Server=`, `postgres://`, or `postgresql://`.
+- Redeploy the Render service.
