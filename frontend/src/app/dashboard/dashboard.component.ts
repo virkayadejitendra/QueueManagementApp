@@ -13,6 +13,8 @@ type NavigationItem = {
   isReady: boolean;
 };
 
+type QueueListTab = 'waiting' | 'skipped' | 'served';
+
 @Component({
   selector: 'app-dashboard',
   imports: [FormsModule, RouterLink, RouterLinkActive],
@@ -28,6 +30,7 @@ export class DashboardComponent {
   protected readonly isLoadingQueue = signal(false);
   protected readonly isSavingWalkIn = signal(false);
   protected readonly queueActionErrorMessage = signal<string | null>(null);
+  protected readonly activeQueueListTab = signal<QueueListTab>('waiting');
   protected readonly walkInForm: ManagerWalkInRequest = {
     customerName: '',
     mobile: '',
@@ -111,6 +114,10 @@ export class DashboardComponent {
   protected signOut(): void {
     this.authTokenStorage.clearToken();
     void this.router.navigateByUrl('/login');
+  }
+
+  protected showQueueList(tab: QueueListTab): void {
+    this.activeQueueListTab.set(tab);
   }
 
   private loadTodayQueue(): void {

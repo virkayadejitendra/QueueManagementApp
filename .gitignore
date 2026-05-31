@@ -12,3 +12,6 @@ dist/
 *.db-shm
 *.db-wal
 TestResults/
+.codex-build/
+.build/
+**/.build/

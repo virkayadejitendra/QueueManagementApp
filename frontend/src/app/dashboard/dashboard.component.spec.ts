@@ -62,7 +62,7 @@ describe('DashboardComponent', () => {
     flushTodayQueue(http, false);
     fixture.detectChanges();
 
-    fixture.debugElement.query(By.css('.control-actions button')).triggerEventHandler('click');
+    clickButton(fixture.nativeElement as HTMLElement, 'Open queue');
 
     const openRequest = http.expectOne('http://localhost:5020/api/manager/queue/open');
     expect(openRequest.request.method).toBe('POST');
@@ -82,9 +82,7 @@ describe('DashboardComponent', () => {
     flushTodayQueue(http, true, { waitingEntries: [createEntry(10, 1, 'Amit Kumar')] });
     fixture.detectChanges();
 
-    const callNextButton = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'))
-      .find(button => button.textContent?.includes('Call next'));
-    callNextButton?.click();
+    clickButton(fixture.nativeElement as HTMLElement, 'Call next');
 
     const request = http.expectOne('http://localhost:5020/api/manager/queue/call-next');
     expect(request.request.method).toBe('POST');
@@ -104,9 +102,7 @@ describe('DashboardComponent', () => {
     flushTodayQueue(http, true, { waitingEntries: [createEntry(10, 1, 'Amit Kumar')] });
     fixture.detectChanges();
 
-    const callNextButton = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'))
-      .find(button => button.textContent?.includes('Call next'));
-    callNextButton?.click();
+    clickButton(fixture.nativeElement as HTMLElement, 'Call next');
 
     const request = http.expectOne('http://localhost:5020/api/manager/queue/call-next');
     request.flush(
@@ -200,5 +196,13 @@ describe('DashboardComponent', () => {
       callCount: status === 'Called' ? 1 : 0,
       skipCount: 0
     };
+  }
+
+  function clickButton(compiled: HTMLElement, label: string): void {
+    const button = Array.from(compiled.querySelectorAll('button'))
+      .find(candidate => candidate.textContent?.includes(label));
+
+    expect(button).toBeTruthy();
+    button?.click();
   }
 });

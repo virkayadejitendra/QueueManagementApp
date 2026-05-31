@@ -5,7 +5,10 @@
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
   color: #18211f;
-  box-sizing: border-box;
+}
+
+.mobile-topbar {
+  display: none;
 }
 
 .side-panel {
@@ -86,7 +89,7 @@ nav small {
   min-width: 0;
   display: grid;
   align-content: start;
-  gap: 24px;
+  gap: 20px;
   padding: 32px;
 }
 
@@ -160,9 +163,20 @@ h2 {
 }
 
 .control-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, max-content));
   gap: 12px;
+}
+
+.control-actions button,
+.entry-actions button,
+.walk-in-form button {
+  width: auto;
+  min-width: 0;
+}
+
+.primary-action {
+  background: #176677;
 }
 
 .section-heading {
@@ -224,7 +238,30 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
+}
+
+.entry-actions button {
+  padding: 10px 12px;
+  min-height: 40px;
+}
+
+.walk-in-panel summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.walk-in-panel summary::marker {
+  color: #1f7a8c;
+}
+
+.walk-in-panel summary small {
+  color: #58635f;
+  font-size: 0.82rem;
 }
 
 .walk-in-form {
@@ -232,6 +269,7 @@ h2 {
   grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
   gap: 12px;
   align-items: end;
+  margin-top: 16px;
 }
 
 .walk-in-form label {
@@ -252,6 +290,10 @@ h2 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
+}
+
+.queue-tabs {
+  display: none;
 }
 
 .empty-state {
@@ -283,13 +325,72 @@ h2 {
   color: #9a321a;
 }
 
-@media (max-width: 820px) {
+@media (max-width: 1180px) {
+  .dashboard-shell {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .side-panel {
+    padding: 24px 16px;
+  }
+
+  .dashboard-content {
+    padding: 28px 24px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .queue-lists {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
   .dashboard-shell {
     grid-template-columns: 1fr;
   }
 
+  .desktop-panel {
+    display: none;
+  }
+
+  .mobile-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 10px;
+    align-items: center;
+    border-bottom: 1px solid #d9ded8;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(10px);
+    padding: 12px 16px;
+  }
+
+  .mobile-topbar strong {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    color: #18211f;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-topbar .eyebrow {
+    margin-bottom: 2px;
+  }
+
+  .compact-button {
+    width: auto;
+    min-height: 38px;
+    padding: 8px 10px;
+  }
+
   .side-panel {
-    border-right: 0;
     border-bottom: 1px solid #d9ded8;
     grid-template-rows: auto auto auto;
     padding: 22px 16px;
@@ -300,25 +401,104 @@ h2 {
   }
 
   .dashboard-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .summary-tile {
+    padding: 14px;
+  }
+
+  .summary-tile strong {
+    font-size: 1.35rem;
+  }
+
+  .control-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .control-actions button {
+    width: 100%;
+  }
+
+  .walk-in-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .walk-in-form button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .queue-lists {
     grid-template-columns: 1fr;
+  }
+
+  .queue-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    border: 1px solid #d9ded8;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 6px;
+  }
+
+  .queue-tabs button {
+    width: 100%;
+    min-height: 40px;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    align-items: center;
+    border-radius: 6px;
+    background: transparent;
+    color: #34413d;
+    padding: 8px;
+  }
+
+  .queue-tabs button.active {
+    background: #1f7a8c;
+    color: #ffffff;
+  }
+
+  .queue-tabs span {
+    min-width: 24px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.24);
+    padding: 2px 6px;
+  }
+
+  .queue-tabs button:not(.active) span {
+    background: #eef7f4;
+    color: #124c59;
+  }
+
+  .hidden-on-mobile {
+    display: none;
   }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 620px) {
   .brand-block {
     margin-bottom: 0;
   }
 
   .dashboard-content {
-    padding: 24px 16px;
+    gap: 14px;
+    padding: 18px 10px 24px;
   }
 
-  nav {
-    grid-template-columns: 1fr;
+  .mobile-topbar {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
   }
 
   header {
-    display: grid;
+    display: none;
   }
 
   h2 {
@@ -330,25 +510,85 @@ h2 {
   .current-customer,
   .walk-in-panel,
   .queue-list {
-    padding: 16px;
+    padding: 14px;
   }
 
-  .control-actions button,
-  .entry-actions button,
-  .walk-in-form button {
+  .summary-tile {
+    gap: 6px;
+    padding: 12px 10px;
+  }
+
+  .summary-tile span {
+    font-size: 0.78rem;
+  }
+
+  .summary-tile strong {
+    font-size: 1.08rem;
+  }
+
+  .queue-controls {
+    gap: 12px;
+  }
+
+  .queue-controls p {
+    font-size: 0.92rem;
+    line-height: 1.45;
+  }
+
+  .control-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .control-actions .primary-action {
+    order: -1;
+    min-height: 52px;
+    font-size: 1.05rem;
+  }
+
+  .entry-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
+  }
+
+  .entry-actions button {
     width: 100%;
-    min-width: 0;
   }
 
   .entry-card,
   .entry-row {
     display: grid;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .walk-in-panel:not([open]) {
+    padding: 14px 16px;
+  }
+
+  .walk-in-form {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .queue-tabs {
+    position: sticky;
+    top: 96px;
+    z-index: 8;
   }
 }
 
-@media (max-width: 1040px) {
-  .walk-in-form,
-  .queue-lists {
-    grid-template-columns: 1fr;
+@media (max-width: 420px) {
+  .dashboard-content {
+    padding-inline: 8px;
+  }
+
+  .mobile-topbar {
+    padding-inline: 10px;
+  }
+
+  .queue-tabs button {
+    font-size: 0.86rem;
+    padding-inline: 4px;
   }
 }

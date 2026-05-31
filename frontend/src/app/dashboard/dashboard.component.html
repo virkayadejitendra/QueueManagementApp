@@ -1,5 +1,5 @@
 <main class="dashboard-shell">
-  <aside class="side-panel" aria-label="Manager navigation">
+  <aside class="side-panel desktop-panel" aria-label="Manager navigation">
     <div class="brand-block">
       <p class="eyebrow">Queue Management</p>
       <h1>Manager</h1>
@@ -24,6 +24,17 @@
       Sign out
     </button>
   </aside>
+
+  <div class="mobile-topbar" aria-label="Manager header">
+    <div>
+      <p class="eyebrow">Queue Management</p>
+      <strong>{{ queueToday()?.businessName ?? 'Manager' }}</strong>
+    </div>
+    <span class="status-chip">{{ queueToday()?.isQueueOpen ? 'Open' : 'Closed' }}</span>
+    <button class="sign-out-button compact-button" type="button" (click)="signOut()">
+      Sign out
+    </button>
+  </div>
 
   <section class="dashboard-content" aria-labelledby="dashboard-title">
     <header>
@@ -69,14 +80,14 @@
       }
 
       <div class="control-actions">
+        <button class="primary-action" type="button" (click)="callNext()" [disabled]="isLoadingQueue() || !queueToday()?.isQueueOpen || !!queueToday()?.currentCalled || !queueToday()?.waitingCount">
+          Call next
+        </button>
         <button type="button" (click)="openQueue()" [disabled]="isLoadingQueue() || queueToday()?.isQueueOpen">
           Open queue
         </button>
         <button type="button" class="secondary-button" (click)="closeQueue()" [disabled]="isLoadingQueue() || !queueToday()?.isQueueOpen">
           Close queue
-        </button>
-        <button type="button" (click)="callNext()" [disabled]="isLoadingQueue() || !queueToday()?.isQueueOpen || !!queueToday()?.currentCalled || !queueToday()?.waitingCount">
-          Call next
         </button>
       </div>
     </section>
@@ -107,10 +118,11 @@
       }
     </section>
 
-    <section class="walk-in-panel" aria-labelledby="walk-in-title">
-      <div class="section-heading">
-        <h3 id="walk-in-title">Manual walk-in</h3>
-      </div>
+    <details class="walk-in-panel">
+      <summary id="walk-in-title">
+        <span>Manual walk-in</span>
+        <small>Add customer</small>
+      </summary>
 
       <form class="walk-in-form" (ngSubmit)="addWalkIn()">
         <label>
@@ -137,10 +149,40 @@
           Add walk-in
         </button>
       </form>
-    </section>
+    </details>
 
     <section class="queue-lists" aria-label="Today queue lists">
-      <div class="queue-list">
+      <div class="queue-tabs" role="tablist" aria-label="Queue list filters">
+        <button
+          type="button"
+          role="tab"
+          [class.active]="activeQueueListTab() === 'waiting'"
+          [attr.aria-selected]="activeQueueListTab() === 'waiting'"
+          (click)="showQueueList('waiting')">
+          Waiting
+          <span>{{ queueToday()?.waitingEntries?.length ?? 0 }}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          [class.active]="activeQueueListTab() === 'skipped'"
+          [attr.aria-selected]="activeQueueListTab() === 'skipped'"
+          (click)="showQueueList('skipped')">
+          Skipped
+          <span>{{ queueToday()?.skippedEntries?.length ?? 0 }}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          [class.active]="activeQueueListTab() === 'served'"
+          [attr.aria-selected]="activeQueueListTab() === 'served'"
+          (click)="showQueueList('served')">
+          Served
+          <span>{{ queueToday()?.recentServedEntries?.length ?? 0 }}</span>
+        </button>
+      </div>
+
+      <div class="queue-list" [class.hidden-on-mobile]="activeQueueListTab() !== 'waiting'">
         <div class="section-heading">
           <h3>Waiting list</h3>
           <span>{{ queueToday()?.waitingEntries?.length ?? 0 }}</span>
@@ -165,7 +207,7 @@
         }
       </div>
 
-      <div class="queue-list">
+      <div class="queue-list" [class.hidden-on-mobile]="activeQueueListTab() !== 'skipped'">
         <div class="section-heading">
           <h3>Skipped list</h3>
           <span>{{ queueToday()?.skippedEntries?.length ?? 0 }}</span>
@@ -188,7 +230,7 @@
         }
       </div>
 
-      <div class="queue-list">
+      <div class="queue-list" [class.hidden-on-mobile]="activeQueueListTab() !== 'served'">
         <div class="section-heading">
           <h3>Recent served</h3>
           <span>{{ queueToday()?.recentServedEntries?.length ?? 0 }}</span>
