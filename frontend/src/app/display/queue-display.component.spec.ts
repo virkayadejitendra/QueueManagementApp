@@ -92,6 +92,26 @@ describe('QueueDisplayComponent', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Last updated 1 seconds ago');
   });
 
+  it('should animate the display token only while a customer is being called', () => {
+    const fixture = TestBed.createComponent(QueueDisplayComponent);
+    const http = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    flushDisplay(http);
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('.token-stage.is-calling'))).not.toBeNull();
+
+    vi.advanceTimersByTime(3000);
+    const request = http.expectOne('http://localhost:5020/api/locations/AB7K2M9Q/display');
+    request.flush(createDisplay({
+      currentCalledTokenNumber: null,
+      currentCalledCustomerName: null
+    }));
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('.token-stage.is-calling'))).toBeNull();
+  });
+
   it('should show a refresh failure message while keeping existing display visible', () => {
     const fixture = TestBed.createComponent(QueueDisplayComponent);
     const http = TestBed.inject(HttpTestingController);
@@ -115,7 +135,16 @@ describe('QueueDisplayComponent', () => {
     request.flush(createDisplay());
   }
 
-  function createDisplay(): object {
+  function createDisplay(overrides: Partial<{
+    locationCode: string;
+    businessName: string;
+    isQueueOpen: boolean;
+    currentCalledTokenNumber: number | null;
+    currentCalledCustomerName: string | null;
+    lastServedTokenNumber: number | null;
+    lastServedCustomerName: string | null;
+    waitingCount: number;
+  }> = {}): object {
     return {
       locationCode: 'AB7K2M9Q',
       businessName: 'Priya Dental Clinic',
@@ -124,7 +153,8 @@ describe('QueueDisplayComponent', () => {
       currentCalledCustomerName: 'Amit Kumar',
       lastServedTokenNumber: 3,
       lastServedCustomerName: 'Neha Rao',
-      waitingCount: 6
+      waitingCount: 6,
+      ...overrides
     };
   }
 });

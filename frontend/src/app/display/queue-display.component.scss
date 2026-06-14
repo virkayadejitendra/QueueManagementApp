@@ -54,6 +54,17 @@ h1 {
   overflow-wrap: anywhere;
 }
 
+.token-stage.is-calling {
+  border-color: #ef9f5f;
+  box-shadow: 0 0 0 0 rgba(239, 159, 95, 0.42);
+  animation: calling-heartbeat-panel 1.6s ease-in-out infinite;
+}
+
+.token-stage.is-calling h2 {
+  color: #b94724;
+  animation: calling-heartbeat-token 1.6s ease-in-out infinite;
+}
+
 .called-name {
   margin-top: 14px;
   color: #34413d;
@@ -133,6 +144,40 @@ footer span {
   border: 1px solid #cdd4d1;
   background: #ffffff;
   color: #34413d;
+}
+
+@keyframes calling-heartbeat-token {
+  0%,
+  40%,
+  100% {
+    transform: scale(1);
+  }
+
+  12% {
+    transform: scale(1.06);
+  }
+
+  24% {
+    transform: scale(0.98);
+  }
+}
+
+@keyframes calling-heartbeat-panel {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 159, 95, 0.38);
+  }
+
+  50% {
+    box-shadow: 0 0 0 14px rgba(239, 159, 95, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .token-stage.is-calling,
+  .token-stage.is-calling h2 {
+    animation: none;
+  }
 }
 
 @media (max-width: 760px) {

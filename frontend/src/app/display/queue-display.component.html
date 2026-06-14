@@ -9,7 +9,10 @@
     </header>
 
     <section class="primary-display" aria-label="Current queue display">
-      <div class="token-stage" aria-labelledby="display-title">
+      <div
+        class="token-stage"
+        [class.is-calling]="currentDisplay.currentCalledTokenNumber !== null"
+        aria-labelledby="display-title">
         <p class="eyebrow">Now calling</p>
         <h2 id="display-title">{{ currentDisplay.currentCalledTokenNumber ?? '-' }}</h2>
         <p class="called-name">{{ currentDisplay.currentCalledCustomerName ?? 'Waiting for next customer' }}</p>
