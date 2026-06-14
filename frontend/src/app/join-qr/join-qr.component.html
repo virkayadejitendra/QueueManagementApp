@@ -1,0 +1,57 @@
+<main class="join-qr-page">
+  <section class="join-qr-content" aria-labelledby="join-qr-title">
+    <header>
+      <div>
+        <p class="eyebrow">Manager tool</p>
+        <h1 id="join-qr-title">Printable join QR</h1>
+      </div>
+      <a routerLink="/dashboard">Back to dashboard</a>
+    </header>
+
+    @if (errorMessage(); as message) {
+      <p class="message error" role="alert">{{ message }}</p>
+    }
+
+    @if (queueToday(); as today) {
+      <section class="poster-layout">
+        <article class="poster-preview" aria-label="Join queue poster preview">
+          @if (posterDataUrl(); as poster) {
+            <img [src]="poster" alt="Printable join queue poster" />
+          } @else if (qrCodeDataUrl(); as qrCode) {
+            <div class="fallback-poster">
+              <h2>{{ today.businessName }}</h2>
+              <p>Scan to join the queue</p>
+              <img [src]="qrCode" alt="QR code for customers to join the queue" />
+              <strong>Location {{ today.locationCode }}</strong>
+              @if (joinUrl(); as url) {
+                <small>{{ url }}</small>
+              }
+            </div>
+          } @else {
+            <p class="empty-state">Creating QR poster...</p>
+          }
+        </article>
+
+        <aside class="poster-controls">
+          <div>
+            <p class="eyebrow">{{ today.locationCode }}</p>
+            <h2>{{ today.businessName }}</h2>
+          </div>
+          @if (joinUrl(); as url) {
+            <p class="join-url">{{ url }}</p>
+          }
+          <div class="poster-actions">
+            <button type="button" (click)="downloadPoster()" [disabled]="!posterDataUrl()">
+              Download image
+            </button>
+            <button type="button" class="secondary-button" (click)="printPoster()" [disabled]="!posterDataUrl()">
+              Print poster
+            </button>
+          </div>
+        </aside>
+      </section>
+    } @else if (isLoading()) {
+      <p class="empty-state">Loading your queue location...</p>
+    }
+  </section>
+</main>

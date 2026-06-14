@@ -4,6 +4,7 @@ import { CustomerJoinComponent } from './customer-join/customer-join.component';
 import { CustomerStatusComponent } from './customer-status/customer-status.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { QueueDisplayComponent } from './display/queue-display.component';
+import { JoinQrComponent } from './join-qr/join-qr.component';
 import { OwnerRegistrationComponent } from './owner-registration/owner-registration.component';
 
 describe('routes', () => {
@@ -30,6 +31,10 @@ describe('routes', () => {
     expect(routes).toContainEqual({
       path: 'dashboard',
       component: DashboardComponent
+    });
+    expect(routes).toContainEqual({
+      path: 'join-qr',
+      component: JoinQrComponent
     });
   });
 

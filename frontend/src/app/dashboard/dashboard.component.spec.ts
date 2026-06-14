@@ -35,6 +35,7 @@ describe('DashboardComponent', () => {
     expect(compiled.querySelector('aside nav')?.textContent).toContain('Display screen');
     expect(compiled.querySelector('.sign-out-button')?.textContent).toContain('Sign out');
     expect(compiled.querySelector('.queue-controls')?.textContent).toContain('AB7K2M9Q');
+    expect(compiled.querySelector('.queue-controls')?.textContent).toContain('Create printable QR');
     expect(compiled.textContent).toContain('Waiting list');
     expect(compiled.textContent).toContain('Manual walk-in');
   });

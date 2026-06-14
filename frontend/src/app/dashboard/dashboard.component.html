@@ -74,6 +74,10 @@
             Display screen:
             <a [routerLink]="displayUrl">Open {{ today.locationCode }}</a>
           </p>
+          <p>
+            Join QR poster:
+            <a routerLink="/join-qr">Create printable QR</a>
+          </p>
         } @else {
           <p>Load your assigned queue location to manage customer joining.</p>
         }

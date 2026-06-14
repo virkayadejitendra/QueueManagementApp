@@ -42,6 +42,7 @@ export class DashboardComponent {
     { label: 'Dashboard', route: '/dashboard', isReady: true },
     { label: 'Today queue', route: '/dashboard', isReady: true },
     { label: 'Walk-in', route: '/dashboard', isReady: true },
+    { label: 'Join QR', route: '/join-qr', isReady: true },
     { label: 'Display screen', route: '/dashboard', isReady: false },
     { label: 'Settings', route: '/dashboard', isReady: false }
   ];
