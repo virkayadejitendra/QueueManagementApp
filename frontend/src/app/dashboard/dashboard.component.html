@@ -70,6 +70,10 @@
             Public join link:
             <a [routerLink]="joinUrl">{{ today.locationCode }}</a>
           </p>
+          <p>
+            Display screen:
+            <a [routerLink]="displayUrl">Open {{ today.locationCode }}</a>
+          </p>
         } @else {
           <p>Load your assigned queue location to manage customer joining.</p>
         }

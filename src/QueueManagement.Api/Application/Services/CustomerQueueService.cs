@@ -72,6 +72,96 @@ public sealed class CustomerQueueService(
             statusUrl);
     }
 
+    public async Task<CustomerQueueStatusResponse?> GetStatusAsync(
+        int queueEntryId,
+        string trackingToken,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(trackingToken))
+        {
+            return null;
+        }
+
+        var entry = await repository.FindEntryWithLocationAsync(queueEntryId, cancellationToken);
+
+        if (entry?.QueueLocation is null || entry.TrackingToken != trackingToken)
+        {
+            return null;
+        }
+
+        var location = entry.QueueLocation;
+        var businessDate = GetBusinessDate(DateTimeOffset.Now, location.QueueResetTime);
+        var waitingCount = await repository.CountWaitingEntriesAsync(
+            location.Id,
+            businessDate,
+            cancellationToken);
+        var currentCalledEntry = await repository.GetCurrentCalledEntryAsync(
+            location.Id,
+            businessDate,
+            cancellationToken);
+        var queuePosition = entry.Status == QueueEntryStatuses.Waiting && entry.BusinessDate == businessDate
+            ? await repository.CountWaitingEntriesBeforeOrAtAsync(
+                location.Id,
+                businessDate,
+                entry.SortOrder,
+                entry.TokenNumber,
+                cancellationToken)
+            : (int?)null;
+
+        return new CustomerQueueStatusResponse(
+            entry.Id,
+            location.LocationCode,
+            location.BusinessName,
+            entry.TokenNumber,
+            entry.Status,
+            queuePosition,
+            waitingCount,
+            currentCalledEntry?.TokenNumber,
+            entry.CreatedAt,
+            entry.CalledAt,
+            entry.ServedAt,
+            entry.CancelledAt);
+    }
+
+    public async Task<QueueDisplayResponse?> GetDisplayAsync(
+        string locationCode,
+        CancellationToken cancellationToken)
+    {
+        var normalizedLocationCode = locationCode.Trim().ToUpperInvariant();
+        var location = await repository.FindLocationByCodeAsync(
+            normalizedLocationCode,
+            cancellationToken);
+
+        if (location is null)
+        {
+            return null;
+        }
+
+        var businessDate = GetBusinessDate(DateTimeOffset.Now, location.QueueResetTime);
+        var waitingCount = await repository.CountWaitingEntriesAsync(
+            location.Id,
+            businessDate,
+            cancellationToken);
+        var currentCalledEntry = await repository.GetCurrentCalledEntryAsync(
+            location.Id,
+            businessDate,
+            cancellationToken);
+        var lastServedEntry = await repository.GetLastServedEntryAsync(
+            location.Id,
+            businessDate,
+            cancellationToken);
+
+        return new QueueDisplayResponse(
+            location.LocationCode,
+            location.BusinessName,
+            location.IsQueueOpen,
+            currentCalledEntry?.TokenNumber,
+            currentCalledEntry?.CustomerName,
+            lastServedEntry?.TokenNumber,
+            lastServedEntry?.CustomerName,
+            waitingCount);
+    }
+
     private async Task<string> CreateUniqueTrackingTokenAsync(CancellationToken cancellationToken)
     {
         for (var attempt = 0; attempt < TrackingTokenGenerationAttempts; attempt++)

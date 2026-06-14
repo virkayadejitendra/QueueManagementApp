@@ -30,4 +30,18 @@ public sealed class LocationsController(ICustomerQueueService customerQueueServi
 
         return Created(response.StatusUrl, response);
     }
+
+    [HttpGet("{locationCode}/display")]
+    [ProducesResponseType(typeof(QueueDisplayResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<QueueDisplayResponse>> GetDisplay(
+        string locationCode,
+        CancellationToken cancellationToken)
+    {
+        var response = await customerQueueService.GetDisplayAsync(
+            locationCode,
+            cancellationToken);
+
+        return response is null ? NotFound() : Ok(response);
+    }
 }

@@ -8,6 +8,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using QueueManagement.Api.Domain.BusinessRules;
 using QueueManagement.Api.Domain.Entities;
 using QueueManagement.Api.Infrastructure.ExternalServices;
@@ -338,13 +339,8 @@ public sealed class ManagerQueueTests
 
             builder.ConfigureServices(services =>
             {
-                var dbContextDescriptor = services.SingleOrDefault(
-                    service => service.ServiceType == typeof(DbContextOptions<AppDbContext>));
-
-                if (dbContextDescriptor is not null)
-                {
-                    services.Remove(dbContextDescriptor);
-                }
+                services.RemoveAll<DbContextOptions<AppDbContext>>();
+                services.RemoveAll<Microsoft.EntityFrameworkCore.Infrastructure.IDbContextOptionsConfiguration<AppDbContext>>();
 
                 connection = new SqliteConnection("Data Source=:memory:");
                 connection.Open();

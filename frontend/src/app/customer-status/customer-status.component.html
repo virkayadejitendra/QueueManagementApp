@@ -1,0 +1,75 @@
+<main class="auth-page single-panel-page">
+  <section class="intro">
+    <p class="eyebrow">Private status</p>
+    <h1>Queue status</h1>
+    <p>Keep this private page open to see your token and place in the queue.</p>
+  </section>
+
+  <section class="auth-panel status-panel" aria-labelledby="status-title">
+    @if (status(); as currentStatus) {
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">{{ currentStatus.businessName }}</p>
+          <h2 id="status-title">Token {{ currentStatus.tokenNumber }}</h2>
+        </div>
+        <span class="status-chip">{{ currentStatus.status }}</span>
+      </div>
+
+      <div class="status-grid">
+        <article>
+          <span>Queue position</span>
+          <strong>{{ currentStatus.queuePosition ?? '-' }}</strong>
+        </article>
+        <article>
+          <span>Waiting</span>
+          <strong>{{ currentStatus.waitingCount }}</strong>
+        </article>
+        <article>
+          <span>Now calling</span>
+          <strong>{{ currentStatus.currentCalledTokenNumber ?? '-' }}</strong>
+        </article>
+      </div>
+
+      @if (currentStatus.status === 'Waiting') {
+        <p class="message success">You are in the waiting list. Watch this page for updates.</p>
+      } @else if (currentStatus.status === 'Called') {
+        <p class="message success">Your token has been called. Please proceed to the counter.</p>
+      } @else if (currentStatus.status === 'Served') {
+        <p class="message success">Your visit has been marked as served.</p>
+      } @else if (currentStatus.status === 'Cancelled') {
+        <p class="message error">This queue entry was cancelled.</p>
+      } @else {
+        <p class="message">Your token is not currently in the waiting list.</p>
+      }
+
+      <footer class="refresh-row">
+        <span>
+          @if (secondsSinceLastUpdate() !== null) {
+            Last updated {{ secondsSinceLastUpdate() }} seconds ago
+          } @else {
+            Waiting for first refresh
+          }
+        </span>
+        <button type="button" class="secondary-button" (click)="refreshNow()">Retry now</button>
+      </footer>
+    } @else if (isInitialLoading()) {
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Loading</p>
+          <h2 id="status-title">Checking your status</h2>
+        </div>
+      </div>
+    } @else {
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Unavailable</p>
+          <h2 id="status-title">Status not found</h2>
+        </div>
+      </div>
+    }
+
+    @if (refreshErrorMessage(); as message) {
+      <p class="message error" role="alert">{{ message }}</p>
+    }
+  </section>
+</main>

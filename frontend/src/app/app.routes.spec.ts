@@ -1,8 +1,9 @@
 import { routes } from './app.routes';
 import { LoginComponent } from './auth/login.component';
 import { CustomerJoinComponent } from './customer-join/customer-join.component';
-import { CustomerStatusPlaceholderComponent } from './customer-status/customer-status-placeholder.component';
+import { CustomerStatusComponent } from './customer-status/customer-status.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
+import { QueueDisplayComponent } from './display/queue-display.component';
 import { OwnerRegistrationComponent } from './owner-registration/owner-registration.component';
 
 describe('routes', () => {
@@ -39,7 +40,11 @@ describe('routes', () => {
     });
     expect(routes).toContainEqual({
       path: 'status/:queueEntryId/:trackingToken',
-      component: CustomerStatusPlaceholderComponent
+      component: CustomerStatusComponent
+    });
+    expect(routes).toContainEqual({
+      path: 'display/:locationCode',
+      component: QueueDisplayComponent
     });
   });
 });

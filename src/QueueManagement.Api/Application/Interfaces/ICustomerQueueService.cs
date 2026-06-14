@@ -8,4 +8,13 @@ public interface ICustomerQueueService
         string locationCode,
         CustomerJoinQueueRequest request,
         CancellationToken cancellationToken);
+
+    Task<CustomerQueueStatusResponse?> GetStatusAsync(
+        int queueEntryId,
+        string trackingToken,
+        CancellationToken cancellationToken);
+
+    Task<QueueDisplayResponse?> GetDisplayAsync(
+        string locationCode,
+        CancellationToken cancellationToken);
 }

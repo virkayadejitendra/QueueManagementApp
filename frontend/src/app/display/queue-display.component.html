@@ -1,0 +1,70 @@
+<main class="display-screen">
+  @if (display(); as currentDisplay) {
+    <header>
+      <div>
+        <p class="eyebrow">{{ currentDisplay.locationCode }}</p>
+        <h1>{{ currentDisplay.businessName }}</h1>
+      </div>
+      <span class="status-chip">{{ currentDisplay.isQueueOpen ? 'Open' : 'Closed' }}</span>
+    </header>
+
+    <section class="primary-display" aria-label="Current queue display">
+      <div class="token-stage" aria-labelledby="display-title">
+        <p class="eyebrow">Now calling</p>
+        <h2 id="display-title">{{ currentDisplay.currentCalledTokenNumber ?? '-' }}</h2>
+        <p class="called-name">{{ currentDisplay.currentCalledCustomerName ?? 'Waiting for next customer' }}</p>
+      </div>
+
+      <aside class="join-qr-card" aria-label="Join queue QR code">
+        <span>Join queue</span>
+        @if (joinQrCodeDataUrl(); as qrCodeDataUrl) {
+          <img [src]="qrCodeDataUrl" alt="QR code to join the queue" />
+        }
+        @if (joinUrl(); as url) {
+          <small>{{ url }}</small>
+        }
+      </aside>
+    </section>
+
+    <section class="display-grid" aria-label="Queue display summary">
+      <article>
+        <span>Last served</span>
+        <strong>{{ currentDisplay.lastServedTokenNumber ?? '-' }}</strong>
+        <small>{{ currentDisplay.lastServedCustomerName ?? 'No customer served yet' }}</small>
+      </article>
+      <article>
+        <span>Waiting</span>
+        <strong>{{ currentDisplay.waitingCount }}</strong>
+      </article>
+      <article>
+        <span>Queue</span>
+        <strong>{{ currentDisplay.isQueueOpen ? 'Open' : 'Closed' }}</strong>
+      </article>
+    </section>
+
+    <footer>
+      <span>
+        @if (secondsSinceLastUpdate() !== null) {
+          Last updated {{ secondsSinceLastUpdate() }} seconds ago
+        } @else {
+          Waiting for first refresh
+        }
+      </span>
+      <button type="button" class="secondary-button" (click)="refreshNow()">Retry now</button>
+    </footer>
+  } @else if (isInitialLoading()) {
+    <section class="token-stage" aria-labelledby="display-title">
+      <p class="eyebrow">Loading</p>
+      <h1 id="display-title">Queue display</h1>
+    </section>
+  } @else {
+    <section class="token-stage" aria-labelledby="display-title">
+      <p class="eyebrow">Unavailable</p>
+      <h1 id="display-title">Display not found</h1>
+    </section>
+  }
+
+  @if (refreshErrorMessage(); as message) {
+    <p class="message error" role="alert">{{ message }}</p>
+  }
+</main>

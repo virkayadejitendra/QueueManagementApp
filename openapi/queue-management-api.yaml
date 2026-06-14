@@ -193,6 +193,79 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
+  /api/locations/{locationCode}/display:
+    get:
+      summary: Get the public queue display state for a location
+      operationId: getQueueDisplay
+      tags:
+        - Customer Queue
+      parameters:
+        - name: locationCode
+          in: path
+          required: true
+          schema:
+            type: string
+          example: AB7K2M9Q
+      responses:
+        '200':
+          description: Current public display state for the queue location.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueDisplayResponse'
+              example:
+                locationCode: AB7K2M9Q
+                businessName: Priya Dental Clinic
+                isQueueOpen: true
+                currentCalledTokenNumber: 4
+                currentCalledCustomerName: Amit Kumar
+                lastServedTokenNumber: 3
+                lastServedCustomerName: Neha Rao
+                waitingCount: 6
+        '404':
+          description: Location code was not found.
+  /api/queue-entries/{queueEntryId}/status:
+    get:
+      summary: Get private customer queue status
+      operationId: getCustomerQueueStatus
+      tags:
+        - Customer Queue
+      parameters:
+        - name: queueEntryId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+          example: 10
+        - name: trackingToken
+          in: query
+          required: true
+          schema:
+            type: string
+          example: rA7kXJ3mR1T8vF2pQ9sL0wY6nB4cD5eG
+      responses:
+        '200':
+          description: Private customer queue status for the matching tracking token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerQueueStatusResponse'
+              example:
+                queueEntryId: 10
+                locationCode: AB7K2M9Q
+                businessName: Priya Dental Clinic
+                tokenNumber: 4
+                status: Waiting
+                queuePosition: 2
+                waitingCount: 6
+                currentCalledTokenNumber: 3
+                createdAt: '2026-06-14T09:15:00Z'
+                calledAt: null
+                servedAt: null
+                cancelledAt: null
+        '404':
+          description: Queue entry was not found or the tracking token is invalid.
   /api/manager/queue/status:
     get:
       summary: Get the authenticated manager queue status
@@ -638,6 +711,117 @@ components:
         statusUrl:
           type: string
           example: /status/10/rA7kXJ3mR1T8vF2pQ9sL0wY6nB4cD5eG
+    CustomerQueueStatusResponse:
+      type: object
+      required:
+        - queueEntryId
+        - locationCode
+        - businessName
+        - tokenNumber
+        - status
+        - waitingCount
+        - createdAt
+      properties:
+        queueEntryId:
+          type: integer
+          format: int32
+          example: 10
+        locationCode:
+          type: string
+          example: AB7K2M9Q
+        businessName:
+          type: string
+          example: Priya Dental Clinic
+        tokenNumber:
+          type: integer
+          format: int32
+          example: 4
+        status:
+          type: string
+          enum:
+            - Waiting
+            - Called
+            - Served
+            - Skipped
+            - Cancelled
+          example: Waiting
+        queuePosition:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          example: 2
+        waitingCount:
+          type: integer
+          format: int32
+          example: 6
+        currentCalledTokenNumber:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          example: 3
+        createdAt:
+          type: string
+          format: date-time
+        calledAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        servedAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        cancelledAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+    QueueDisplayResponse:
+      type: object
+      required:
+        - locationCode
+        - businessName
+        - isQueueOpen
+        - waitingCount
+      properties:
+        locationCode:
+          type: string
+          example: AB7K2M9Q
+        businessName:
+          type: string
+          example: Priya Dental Clinic
+        isQueueOpen:
+          type: boolean
+          example: true
+        currentCalledTokenNumber:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          example: 4
+        currentCalledCustomerName:
+          type:
+            - string
+            - 'null'
+          example: Amit Kumar
+        lastServedTokenNumber:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          example: 3
+        lastServedCustomerName:
+          type:
+            - string
+            - 'null'
+          example: Neha Rao
+        waitingCount:
+          type: integer
+          format: int32
+          example: 6
     ManagerQueueStatusResponse:
       type: object
       required:

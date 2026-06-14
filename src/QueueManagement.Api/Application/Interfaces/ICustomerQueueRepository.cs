@@ -8,7 +8,33 @@ public interface ICustomerQueueRepository
         string locationCode,
         CancellationToken cancellationToken);
 
+    Task<QueueEntry?> FindEntryWithLocationAsync(
+        int queueEntryId,
+        CancellationToken cancellationToken);
+
     Task<int> GetLastTokenNumberAsync(
+        int queueLocationId,
+        DateOnly businessDate,
+        CancellationToken cancellationToken);
+
+    Task<int> CountWaitingEntriesAsync(
+        int queueLocationId,
+        DateOnly businessDate,
+        CancellationToken cancellationToken);
+
+    Task<int> CountWaitingEntriesBeforeOrAtAsync(
+        int queueLocationId,
+        DateOnly businessDate,
+        int sortOrder,
+        int tokenNumber,
+        CancellationToken cancellationToken);
+
+    Task<QueueEntry?> GetCurrentCalledEntryAsync(
+        int queueLocationId,
+        DateOnly businessDate,
+        CancellationToken cancellationToken);
+
+    Task<QueueEntry?> GetLastServedEntryAsync(
         int queueLocationId,
         DateOnly businessDate,
         CancellationToken cancellationToken);

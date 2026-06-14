@@ -111,6 +111,11 @@ export class DashboardComponent {
     return today ? `/join/${today.locationCode}` : null;
   }
 
+  protected get displayUrl(): string | null {
+    const today = this.queueToday();
+    return today ? `/display/${today.locationCode}` : null;
+  }
+
   protected signOut(): void {
     this.authTokenStorage.clearToken();
     void this.router.navigateByUrl('/login');

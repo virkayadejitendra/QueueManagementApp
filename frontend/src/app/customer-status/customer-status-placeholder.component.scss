@@ -1,9 +1,0 @@
-.single-panel-page {
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 0.85fr);
-}
-
-@media (max-width: 900px) {
-  .single-panel-page {
-    grid-template-columns: 1fr;
-  }
-}
