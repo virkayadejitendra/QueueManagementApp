@@ -1,0 +1,172 @@
+<main class="dashboard-shell">
+  <aside class="side-panel desktop-panel" aria-label="Manager navigation">
+    <div class="brand-block">
+      <p class="eyebrow">Queue Management</p>
+      <h1>Manager</h1>
+    </div>
+
+    <nav>
+      @for (item of navigationItems; track item.label) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          [class.disabled]="!item.isReady"
+          [attr.aria-disabled]="!item.isReady">
+          <span>{{ item.label }}</span>
+          @if (!item.isReady) {
+            <small>Soon</small>
+          }
+        </a>
+      }
+    </nav>
+
+    <button class="sign-out-button" type="button" (click)="signOut()">Sign out</button>
+  </aside>
+
+  <div class="mobile-topbar" aria-label="Manager header">
+    <div>
+      <p class="eyebrow">Today queue</p>
+      <strong>{{ queueToday()?.businessName ?? 'Manager' }}</strong>
+    </div>
+    <span class="status-chip">{{ queueToday()?.isQueueOpen ? 'Open' : 'Closed' }}</span>
+    <button class="sign-out-button compact-button" type="button" (click)="signOut()">Sign out</button>
+  </div>
+
+  <section class="dashboard-content" aria-labelledby="today-queue-title">
+    <header>
+      <div>
+        <p class="eyebrow">Manager queue</p>
+        <h2 id="today-queue-title">Today queue</h2>
+      </div>
+      <span class="status-chip">{{ queueToday()?.isQueueOpen ? 'Open' : 'Closed' }}</span>
+    </header>
+
+    @if (queueActionErrorMessage(); as message) {
+      <p class="message error" role="alert">{{ message }}</p>
+    }
+
+    <section class="current-customer" aria-labelledby="current-customer-title">
+      <div class="section-heading">
+        <h3 id="current-customer-title">Current called customer</h3>
+      </div>
+
+      @if (queueToday()?.currentCalled; as current) {
+        <article class="entry-card called">
+          <div>
+            <strong>Token {{ current.tokenNumber }}</strong>
+            <span>{{ current.customerName }}</span>
+            @if (current.serviceReason) {
+              <small>{{ current.serviceReason }}</small>
+            }
+          </div>
+          <div class="entry-actions">
+            <button type="button" (click)="markServed(current)" [disabled]="isLoadingQueue()">Served</button>
+            <button type="button" class="secondary-button" (click)="markNoResponse(current)" [disabled]="isLoadingQueue()">No response</button>
+            <button type="button" class="secondary-button" (click)="markSkipped(current)" [disabled]="isLoadingQueue()">Skip</button>
+            <button type="button" class="danger-button" (click)="cancel(current)" [disabled]="isLoadingQueue()">Cancel</button>
+          </div>
+        </article>
+      } @else {
+        <p class="empty-state">No customer is currently called.</p>
+      }
+    </section>
+
+    <section class="queue-lists" aria-label="Today queue lists">
+      <div class="queue-tabs" role="tablist" aria-label="Queue list filters">
+        <button
+          type="button"
+          role="tab"
+          [class.active]="activeQueueListTab() === 'waiting'"
+          [attr.aria-selected]="activeQueueListTab() === 'waiting'"
+          (click)="showQueueList('waiting')">
+          Waiting
+          <span>{{ queueToday()?.waitingEntries?.length ?? 0 }}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          [class.active]="activeQueueListTab() === 'skipped'"
+          [attr.aria-selected]="activeQueueListTab() === 'skipped'"
+          (click)="showQueueList('skipped')">
+          Skipped
+          <span>{{ queueToday()?.skippedEntries?.length ?? 0 }}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          [class.active]="activeQueueListTab() === 'served'"
+          [attr.aria-selected]="activeQueueListTab() === 'served'"
+          (click)="showQueueList('served')">
+          Served
+          <span>{{ queueToday()?.recentServedEntries?.length ?? 0 }}</span>
+        </button>
+      </div>
+
+      <div class="queue-list" [class.hidden-on-mobile]="activeQueueListTab() !== 'waiting'">
+        <div class="section-heading">
+          <h3>Waiting list</h3>
+          <span>{{ queueToday()?.waitingEntries?.length ?? 0 }}</span>
+        </div>
+
+        @for (entry of queueToday()?.waitingEntries ?? []; track entry.queueEntryId) {
+          <article class="entry-row">
+            <div>
+              <strong>Token {{ entry.tokenNumber }}</strong>
+              <span>{{ entry.customerName }}</span>
+              @if (entry.partySize) {
+                <small>Party {{ entry.partySize }}</small>
+              }
+            </div>
+            <div class="entry-actions">
+              <button type="button" class="secondary-button" (click)="markSkipped(entry)" [disabled]="isLoadingQueue()">Skip</button>
+              <button type="button" class="danger-button" (click)="cancel(entry)" [disabled]="isLoadingQueue()">Cancel</button>
+            </div>
+          </article>
+        } @empty {
+          <p class="empty-state">No waiting customers.</p>
+        }
+      </div>
+
+      <div class="queue-list" [class.hidden-on-mobile]="activeQueueListTab() !== 'skipped'">
+        <div class="section-heading">
+          <h3>Skipped list</h3>
+          <span>{{ queueToday()?.skippedEntries?.length ?? 0 }}</span>
+        </div>
+
+        @for (entry of queueToday()?.skippedEntries ?? []; track entry.queueEntryId) {
+          <article class="entry-row">
+            <div>
+              <strong>Token {{ entry.tokenNumber }}</strong>
+              <span>{{ entry.customerName }}</span>
+              <small>Skipped {{ entry.skipCount }} time{{ entry.skipCount === 1 ? '' : 's' }}</small>
+            </div>
+            <div class="entry-actions">
+              <button type="button" (click)="restore(entry)" [disabled]="isLoadingQueue()">Restore</button>
+              <button type="button" class="danger-button" (click)="cancel(entry)" [disabled]="isLoadingQueue()">Cancel</button>
+            </div>
+          </article>
+        } @empty {
+          <p class="empty-state">No skipped customers.</p>
+        }
+      </div>
+
+      <div class="queue-list" [class.hidden-on-mobile]="activeQueueListTab() !== 'served'">
+        <div class="section-heading">
+          <h3>Recent served</h3>
+          <span>{{ queueToday()?.recentServedEntries?.length ?? 0 }}</span>
+        </div>
+
+        @for (entry of queueToday()?.recentServedEntries ?? []; track entry.queueEntryId) {
+          <article class="entry-row compact">
+            <div>
+              <strong>Token {{ entry.tokenNumber }}</strong>
+              <span>{{ entry.customerName }}</span>
+            </div>
+          </article>
+        } @empty {
+          <p class="empty-state">No served customers yet.</p>
+        }
+      </div>
+    </section>
+  </section>
+</main>

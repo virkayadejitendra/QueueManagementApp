@@ -3,17 +3,19 @@ import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { Observable } from 'rxjs';
 import { AuthTokenStorage } from '../auth/auth-token-storage';
-import { ManagerQueueApi } from './manager-queue-api';
-import { managerNavigationItems } from './manager-navigation';
-import { ManagerQueueStatus, ManagerQueueToday } from './manager-queue.models';
+import { managerNavigationItems } from '../dashboard/manager-navigation';
+import { ManagerQueueApi } from '../dashboard/manager-queue-api';
+import { ManagerQueueEntry, ManagerQueueToday } from '../dashboard/manager-queue.models';
+
+type QueueListTab = 'waiting' | 'skipped' | 'served';
 
 @Component({
-  selector: 'app-dashboard',
+  selector: 'app-today-queue',
   imports: [RouterLink, RouterLinkActive],
-  templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.scss'
+  templateUrl: './today-queue.component.html',
+  styleUrl: '../dashboard/dashboard.component.scss'
 })
-export class DashboardComponent {
+export class TodayQueueComponent {
   private readonly authTokenStorage = inject(AuthTokenStorage);
   private readonly managerQueueApi = inject(ManagerQueueApi);
   private readonly router = inject(Router);
@@ -21,32 +23,35 @@ export class DashboardComponent {
   protected readonly queueToday = signal<ManagerQueueToday | null>(null);
   protected readonly isLoadingQueue = signal(false);
   protected readonly queueActionErrorMessage = signal<string | null>(null);
+  protected readonly activeQueueListTab = signal<QueueListTab>('waiting');
   protected readonly navigationItems = managerNavigationItems;
 
   constructor() {
     this.loadTodayQueue();
   }
 
-  protected openQueue(): void {
-    this.runStatusAction(() => this.managerQueueApi.open());
+  protected markServed(entry: ManagerQueueEntry): void {
+    this.runTodayAction(() => this.managerQueueApi.markServed(entry.queueEntryId));
   }
 
-  protected closeQueue(): void {
-    this.runStatusAction(() => this.managerQueueApi.close());
+  protected markNoResponse(entry: ManagerQueueEntry): void {
+    this.runTodayAction(() => this.managerQueueApi.markNoResponse(entry.queueEntryId));
   }
 
-  protected callNext(): void {
-    this.runTodayAction(() => this.managerQueueApi.callNext());
+  protected markSkipped(entry: ManagerQueueEntry): void {
+    this.runTodayAction(() => this.managerQueueApi.markSkipped(entry.queueEntryId));
   }
 
-  protected get joinUrl(): string | null {
-    const today = this.queueToday();
-    return today ? `/join/${today.locationCode}` : null;
+  protected restore(entry: ManagerQueueEntry): void {
+    this.runTodayAction(() => this.managerQueueApi.restore(entry.queueEntryId));
   }
 
-  protected get displayUrl(): string | null {
-    const today = this.queueToday();
-    return today ? `/display/${today.locationCode}` : null;
+  protected cancel(entry: ManagerQueueEntry): void {
+    this.runTodayAction(() => this.managerQueueApi.cancel(entry.queueEntryId));
+  }
+
+  protected showQueueList(tab: QueueListTab): void {
+    this.activeQueueListTab.set(tab);
   }
 
   protected signOut(): void {
@@ -58,38 +63,17 @@ export class DashboardComponent {
     this.runTodayAction(() => this.managerQueueApi.getToday());
   }
 
-  private runStatusAction(action: () => Observable<ManagerQueueStatus>): void {
-    this.isLoadingQueue.set(true);
-    this.queueActionErrorMessage.set(null);
-
-    action().subscribe({
-      next: () => {
-        this.isLoadingQueue.set(false);
-        this.loadTodayQueue();
-      },
-      error: error => {
-        this.queueActionErrorMessage.set(this.getQueueActionErrorMessage(error));
-        this.isLoadingQueue.set(false);
-      }
-    });
-  }
-
-  private runTodayAction(
-    action: () => Observable<ManagerQueueToday>,
-    onSuccess?: () => void,
-    onError?: () => void): void {
+  private runTodayAction(action: () => Observable<ManagerQueueToday>): void {
     this.isLoadingQueue.set(true);
     this.queueActionErrorMessage.set(null);
 
     action().subscribe({
       next: today => {
         this.queueToday.set(today);
-        onSuccess?.();
         this.isLoadingQueue.set(false);
       },
       error: error => {
         this.queueActionErrorMessage.set(this.getQueueActionErrorMessage(error));
-        onError?.();
         this.isLoadingQueue.set(false);
       }
     });
@@ -108,10 +92,6 @@ export class DashboardComponent {
       return error.error?.detail ?? 'Another manager already changed this queue state. Refresh and try again.';
     }
 
-    if (error instanceof HttpErrorResponse && error.status === 400) {
-      return 'Check the customer details and try again.';
-    }
-
-    return 'Queue controls could not be loaded. Check that the API is running and try again.';
+    return 'Queue list could not be loaded. Check that the API is running and try again.';
   }
 }

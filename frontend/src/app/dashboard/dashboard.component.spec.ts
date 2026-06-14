@@ -22,7 +22,7 @@ describe('DashboardComponent', () => {
     TestBed.inject(HttpTestingController).verify();
   });
 
-  it('should render dashboard with queue lists', () => {
+  it('should render dashboard overview with manager navigation links', () => {
     const fixture = TestBed.createComponent(DashboardComponent);
     const http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
@@ -32,12 +32,14 @@ describe('DashboardComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('#dashboard-title')?.textContent).toContain('Dashboard');
     expect(compiled.querySelector('aside nav')?.textContent).toContain('Today queue');
+    expect(compiled.querySelector('aside nav')?.textContent).toContain('Walk-in');
+    expect(compiled.querySelector('aside nav')?.textContent).toContain('Join QR');
     expect(compiled.querySelector('aside nav')?.textContent).toContain('Display screen');
     expect(compiled.querySelector('.sign-out-button')?.textContent).toContain('Sign out');
     expect(compiled.querySelector('.queue-controls')?.textContent).toContain('AB7K2M9Q');
     expect(compiled.querySelector('.queue-controls')?.textContent).toContain('Create printable QR');
-    expect(compiled.textContent).toContain('Waiting list');
-    expect(compiled.textContent).toContain('Manual walk-in');
+    expect(compiled.textContent).not.toContain('Waiting list');
+    expect(compiled.textContent).not.toContain('Manual walk-in');
   });
 
   it('should clear the auth token and navigate to login when signing out', () => {
@@ -92,8 +94,8 @@ describe('DashboardComponent', () => {
     }));
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Token 1');
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Amit Kumar');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Current token');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('1');
   });
 
   it('should show a conflict message when call next is rejected', () => {
@@ -112,27 +114,6 @@ describe('DashboardComponent', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Another customer is already called');
-  });
-
-  it('should submit a walk-in customer', () => {
-    const fixture = TestBed.createComponent(DashboardComponent);
-    const http = TestBed.inject(HttpTestingController);
-    fixture.detectChanges();
-    flushTodayQueue(http, true);
-    fixture.detectChanges();
-
-    (fixture.componentInstance as unknown as { walkInForm: { customerName: string } }).walkInForm.customerName = 'Neha Rao';
-    fixture.debugElement.query(By.css('.walk-in-form')).triggerEventHandler('ngSubmit');
-
-    const request = http.expectOne('http://localhost:5020/api/manager/queue/walk-in');
-    expect(request.request.method).toBe('POST');
-    expect(request.request.body.customerName).toBe('Neha Rao');
-    request.flush(createTodayQueue(true, {
-      waitingEntries: [createEntry(11, 2, 'Neha Rao')]
-    }));
-    fixture.detectChanges();
-
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Neha Rao');
   });
 
   function flushTodayQueue(

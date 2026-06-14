@@ -1,52 +1,62 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { Observable } from 'rxjs';
 import { AuthTokenStorage } from '../auth/auth-token-storage';
-import { ManagerQueueApi } from './manager-queue-api';
-import { managerNavigationItems } from './manager-navigation';
-import { ManagerQueueStatus, ManagerQueueToday } from './manager-queue.models';
+import { managerNavigationItems } from '../dashboard/manager-navigation';
+import { ManagerQueueApi } from '../dashboard/manager-queue-api';
+import { ManagerQueueToday, ManagerWalkInRequest } from '../dashboard/manager-queue.models';
 
 @Component({
-  selector: 'app-dashboard',
-  imports: [RouterLink, RouterLinkActive],
-  templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.scss'
+  selector: 'app-walk-in',
+  imports: [FormsModule, RouterLink, RouterLinkActive],
+  templateUrl: './walk-in.component.html',
+  styleUrl: '../dashboard/dashboard.component.scss'
 })
-export class DashboardComponent {
+export class WalkInComponent {
   private readonly authTokenStorage = inject(AuthTokenStorage);
   private readonly managerQueueApi = inject(ManagerQueueApi);
   private readonly router = inject(Router);
 
   protected readonly queueToday = signal<ManagerQueueToday | null>(null);
   protected readonly isLoadingQueue = signal(false);
+  protected readonly isSavingWalkIn = signal(false);
   protected readonly queueActionErrorMessage = signal<string | null>(null);
   protected readonly navigationItems = managerNavigationItems;
+  protected readonly walkInForm: ManagerWalkInRequest = {
+    customerName: '',
+    mobile: '',
+    partySize: null,
+    serviceReason: ''
+  };
 
   constructor() {
     this.loadTodayQueue();
   }
 
-  protected openQueue(): void {
-    this.runStatusAction(() => this.managerQueueApi.open());
-  }
+  protected addWalkIn(): void {
+    if (!this.walkInForm.customerName.trim()) {
+      this.queueActionErrorMessage.set('Customer name is required for a walk-in.');
+      return;
+    }
 
-  protected closeQueue(): void {
-    this.runStatusAction(() => this.managerQueueApi.close());
-  }
-
-  protected callNext(): void {
-    this.runTodayAction(() => this.managerQueueApi.callNext());
-  }
-
-  protected get joinUrl(): string | null {
-    const today = this.queueToday();
-    return today ? `/join/${today.locationCode}` : null;
-  }
-
-  protected get displayUrl(): string | null {
-    const today = this.queueToday();
-    return today ? `/display/${today.locationCode}` : null;
+    this.isSavingWalkIn.set(true);
+    this.runTodayAction(
+      () => this.managerQueueApi.addWalkIn({
+        customerName: this.walkInForm.customerName,
+        mobile: this.walkInForm.mobile || null,
+        partySize: this.walkInForm.partySize || null,
+        serviceReason: this.walkInForm.serviceReason || null
+      }),
+      () => {
+        this.walkInForm.customerName = '';
+        this.walkInForm.mobile = '';
+        this.walkInForm.partySize = null;
+        this.walkInForm.serviceReason = '';
+        this.isSavingWalkIn.set(false);
+      },
+      () => this.isSavingWalkIn.set(false));
   }
 
   protected signOut(): void {
@@ -56,22 +66,6 @@ export class DashboardComponent {
 
   private loadTodayQueue(): void {
     this.runTodayAction(() => this.managerQueueApi.getToday());
-  }
-
-  private runStatusAction(action: () => Observable<ManagerQueueStatus>): void {
-    this.isLoadingQueue.set(true);
-    this.queueActionErrorMessage.set(null);
-
-    action().subscribe({
-      next: () => {
-        this.isLoadingQueue.set(false);
-        this.loadTodayQueue();
-      },
-      error: error => {
-        this.queueActionErrorMessage.set(this.getQueueActionErrorMessage(error));
-        this.isLoadingQueue.set(false);
-      }
-    });
   }
 
   private runTodayAction(
@@ -101,17 +95,17 @@ export class DashboardComponent {
     }
 
     if (error instanceof HttpErrorResponse && error.status === 404) {
-      return 'This queue item could not be found. Refresh and try again.';
+      return 'No queue location is assigned to this account.';
     }
 
     if (error instanceof HttpErrorResponse && error.status === 409) {
-      return error.error?.detail ?? 'Another manager already changed this queue state. Refresh and try again.';
+      return error.error?.detail ?? 'This queue is currently closed.';
     }
 
     if (error instanceof HttpErrorResponse && error.status === 400) {
       return 'Check the customer details and try again.';
     }
 
-    return 'Queue controls could not be loaded. Check that the API is running and try again.';
+    return 'Walk-in customer could not be saved. Check that the API is running and try again.';
   }
 }

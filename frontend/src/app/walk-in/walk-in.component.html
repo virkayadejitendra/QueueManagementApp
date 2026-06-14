@@ -1,0 +1,91 @@
+<main class="dashboard-shell">
+  <aside class="side-panel desktop-panel" aria-label="Manager navigation">
+    <div class="brand-block">
+      <p class="eyebrow">Queue Management</p>
+      <h1>Manager</h1>
+    </div>
+
+    <nav>
+      @for (item of navigationItems; track item.label) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          [class.disabled]="!item.isReady"
+          [attr.aria-disabled]="!item.isReady">
+          <span>{{ item.label }}</span>
+          @if (!item.isReady) {
+            <small>Soon</small>
+          }
+        </a>
+      }
+    </nav>
+
+    <button class="sign-out-button" type="button" (click)="signOut()">Sign out</button>
+  </aside>
+
+  <div class="mobile-topbar" aria-label="Manager header">
+    <div>
+      <p class="eyebrow">Walk-in</p>
+      <strong>{{ queueToday()?.businessName ?? 'Manager' }}</strong>
+    </div>
+    <span class="status-chip">{{ queueToday()?.isQueueOpen ? 'Open' : 'Closed' }}</span>
+    <button class="sign-out-button compact-button" type="button" (click)="signOut()">Sign out</button>
+  </div>
+
+  <section class="dashboard-content" aria-labelledby="walk-in-page-title">
+    <header>
+      <div>
+        <p class="eyebrow">Manager queue</p>
+        <h2 id="walk-in-page-title">Walk-in</h2>
+      </div>
+      <span class="status-chip">{{ queueToday()?.isQueueOpen ? 'Open' : 'Closed' }}</span>
+    </header>
+
+    <section class="queue-controls" aria-labelledby="walk-in-location-title">
+      <div>
+        <h3 id="walk-in-location-title">{{ queueToday()?.businessName ?? 'Queue location' }}</h3>
+        @if (queueToday(); as today) {
+          <p>{{ today.locationCode }} has {{ today.waitingCount }} waiting customer{{ today.waitingCount === 1 ? '' : 's' }}.</p>
+        } @else {
+          <p>Load your assigned queue location before adding a walk-in customer.</p>
+        }
+      </div>
+
+      @if (queueActionErrorMessage(); as message) {
+        <p class="message error" role="alert">{{ message }}</p>
+      }
+    </section>
+
+    <section class="walk-in-panel" aria-labelledby="walk-in-title">
+      <div class="section-heading">
+        <h3 id="walk-in-title">Manual walk-in</h3>
+      </div>
+
+      <form class="walk-in-form" (ngSubmit)="addWalkIn()">
+        <label>
+          Customer name
+          <input name="customerName" [(ngModel)]="walkInForm.customerName" maxlength="100" required />
+        </label>
+
+        <label>
+          Mobile
+          <input name="mobile" [(ngModel)]="walkInForm.mobile" maxlength="30" />
+        </label>
+
+        <label>
+          Party size
+          <input name="partySize" type="number" min="1" max="50" [(ngModel)]="walkInForm.partySize" />
+        </label>
+
+        <label>
+          Reason
+          <input name="serviceReason" [(ngModel)]="walkInForm.serviceReason" maxlength="200" />
+        </label>
+
+        <button type="submit" [disabled]="isLoadingQueue() || isSavingWalkIn() || !queueToday()?.isQueueOpen">
+          Add walk-in
+        </button>
+      </form>
+    </section>
+  </section>
+</main>

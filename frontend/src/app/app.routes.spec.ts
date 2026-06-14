@@ -6,6 +6,8 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { QueueDisplayComponent } from './display/queue-display.component';
 import { JoinQrComponent } from './join-qr/join-qr.component';
 import { OwnerRegistrationComponent } from './owner-registration/owner-registration.component';
+import { TodayQueueComponent } from './today-queue/today-queue.component';
+import { WalkInComponent } from './walk-in/walk-in.component';
 
 describe('routes', () => {
   it('should redirect the empty path to login', () => {
@@ -31,6 +33,14 @@ describe('routes', () => {
     expect(routes).toContainEqual({
       path: 'dashboard',
       component: DashboardComponent
+    });
+    expect(routes).toContainEqual({
+      path: 'today-queue',
+      component: TodayQueueComponent
+    });
+    expect(routes).toContainEqual({
+      path: 'walk-in',
+      component: WalkInComponent
     });
     expect(routes).toContainEqual({
       path: 'join-qr',
