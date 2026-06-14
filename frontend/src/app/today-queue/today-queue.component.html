@@ -48,6 +48,13 @@
     <section class="current-customer" aria-labelledby="current-customer-title">
       <div class="section-heading">
         <h3 id="current-customer-title">Current called customer</h3>
+        <button
+          class="primary-action"
+          type="button"
+          (click)="callNext()"
+          [disabled]="isLoadingQueue() || !queueToday()?.isQueueOpen || !!queueToday()?.currentCalled || !queueToday()?.waitingCount">
+          Call next
+        </button>
       </div>
 
       @if (queueToday()?.currentCalled; as current) {

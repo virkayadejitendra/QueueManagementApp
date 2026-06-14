@@ -30,6 +30,10 @@ export class TodayQueueComponent {
     this.loadTodayQueue();
   }
 
+  protected callNext(): void {
+    this.runTodayAction(() => this.managerQueueApi.callNext());
+  }
+
   protected markServed(entry: ManagerQueueEntry): void {
     this.runTodayAction(() => this.managerQueueApi.markServed(entry.queueEntryId));
   }

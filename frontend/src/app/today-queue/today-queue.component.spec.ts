@@ -63,6 +63,29 @@ describe('TodayQueueComponent', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Skipped');
   });
 
+  it('should call the next waiting customer from today queue', () => {
+    const fixture = TestBed.createComponent(TodayQueueComponent);
+    const http = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    flushTodayQueue(http, {
+      waitingEntries: [createEntry(11, 2, 'Neha Rao')]
+    });
+    fixture.detectChanges();
+
+    clickButton(fixture.nativeElement as HTMLElement, 'Call next');
+
+    const request = http.expectOne('http://localhost:5020/api/manager/queue/call-next');
+    expect(request.request.method).toBe('POST');
+    request.flush(createTodayQueue({
+      currentCalled: createEntry(11, 2, 'Neha Rao', 'Called')
+    }));
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('Current called customer');
+    expect(compiled.textContent).toContain('Neha Rao');
+  });
+
   function flushTodayQueue(
     http: HttpTestingController,
     overrides: Partial<ReturnType<typeof createTodayQueue>> = {}): void {
