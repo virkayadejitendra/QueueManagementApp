@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { DOCUMENT } from '@angular/common';
 import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import QRCode from 'qrcode';
@@ -12,6 +13,7 @@ import { QueueDisplay } from './queue-display.models';
 })
 export class QueueDisplayComponent implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
+  private readonly document = inject(DOCUMENT);
   private readonly queueDisplayApi = inject(QueueDisplayApi);
   private readonly locationCode = this.route.snapshot.paramMap.get('locationCode') ?? '';
   private readonly pollInterval = 3000;
@@ -76,7 +78,10 @@ export class QueueDisplayComponent implements OnDestroy {
   }
 
   private async updateJoinQrCode(locationCode: string): Promise<void> {
-    const joinUrl = `${globalThis.location.origin}/join/${encodeURIComponent(locationCode)}`;
+    const baseHref = this.document.querySelector('base')?.getAttribute('href') ?? '/';
+    const appBaseUrl = new URL(baseHref, globalThis.location.origin);
+    const joinUrl = new URL(`join/${encodeURIComponent(locationCode)}`, appBaseUrl).toString();
+
     this.joinUrl.set(joinUrl);
     this.joinQrCodeDataUrl.set(await QRCode.toDataURL(joinUrl, {
       errorCorrectionLevel: 'M',

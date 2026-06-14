@@ -40,6 +40,10 @@ describe('QueueDisplayComponent', () => {
   });
 
   it('should load display state from the location code route parameter', async () => {
+    const baseElement = document.querySelector('base') ?? document.head.appendChild(document.createElement('base'));
+    const originalBaseHref = baseElement?.getAttribute('href') ?? '/';
+    baseElement?.setAttribute('href', '/QueueManagementApp/');
+
     const fixture = TestBed.createComponent(QueueDisplayComponent);
     const http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
@@ -52,10 +56,12 @@ describe('QueueDisplayComponent', () => {
     expect(compiled.querySelector('h1')?.textContent).toContain('Priya Dental Clinic');
     expect(compiled.querySelector('#display-title')?.textContent).toContain('4');
     expect(compiled.textContent).toContain('Amit Kumar');
-    expect(compiled.textContent).toContain(`${globalThis.location.origin}/join/AB7K2M9Q`);
+    expect(compiled.textContent).toContain(`${globalThis.location.origin}/QueueManagementApp/join/AB7K2M9Q`);
     expect(compiled.querySelector('.join-qr-card img')?.getAttribute('src')).toContain('data:image/png');
     expect(compiled.textContent).toContain('Last served');
     expect(compiled.textContent).toContain('Neha Rao');
+
+    baseElement?.setAttribute('href', originalBaseHref);
   });
 
   it('should poll the display API every 3 seconds', () => {
